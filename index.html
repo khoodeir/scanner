@@ -3,155 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Student Attendance Scanner</title>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
 body{
-    margin:0;
-    padding:0;
-    background:#111827;
-    font-family:Arial, Helvetica, sans-serif;
-    color:white;
-    text-align:center;
+background:#0f172a;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+color:white;
 }
 
 .container{
-    max-width:500px;
-    margin:auto;
-    padding:20px;
+width:95%;
+max-width:550px;
+background:#1e293b;
+padding:25px;
+border-radius:20px;
+box-shadow:0 0 25px rgba(0,0,0,.4);
+text-align:center;
 }
 
 h1{
-    margin-top:30px;
+font-size:30px;
+margin-bottom:8px;
+color:#38bdf8;
 }
 
-p{
-    color:#d1d5db;
+h2{
+font-size:20px;
+margin-bottom:20px;
+color:#fff;
 }
 
 #reader{
-    width:100%;
-    margin-top:20px;
+width:100%;
+margin:auto;
+overflow:hidden;
+border-radius:15px;
 }
 
 #status{
-    margin-top:25px;
-    font-size:22px;
-    font-weight:bold;
+margin-top:20px;
+font-size:22px;
+font-weight:bold;
 }
 
 .success{
-    color:#22c55e;
+color:#22c55e;
 }
 
 .error{
-    color:#ef4444;
+color:#ef4444;
+}
+
+.wait{
+color:#facc15;
+}
+
+.footer{
+margin-top:20px;
+color:#94a3b8;
+font-size:14px;
 }
 </style>
 
 </head>
-
 <body>
 
 <div class="container">
 
-<h1>📷 QR Attendance Scanner</h1>
-
-<p>Scan the student's QR Code</p>
+<h1>🎓 Student Attendance</h1>
+<h2>Mr Abdullah El-shafey</h2>
 
 <div id="reader"></div>
 
-<div id="status">Waiting for camera...</div>
+<div id="status" class="wait">
+📷 Waiting for QR Code...
+</div>
+
+<div class="footer">
+Powered by n8n & QR Attendance System
+</div>
 
 </div>
 
 <script>
 
-const webhook = "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance";
+const WEBHOOK_URL="https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance";
 
-let scanned = false;
+let scanner;
+let sending=false;
 
-function onScanSuccess(decodedText){
+function setStatus(message,type){
 
-    if(scanned) return;
+const status=document.getElementById("status");
 
-    scanned = true;
+status.className=type;
+status.innerHTML=message;
 
-    document.getElementById("status").innerHTML="⏳ Checking attendance...";
+}
 
-    fetch(webhook,{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            qr_code:decodedText
-        })
-    })
-    .then(res=>res.json())
-    .then(data=>{
+function onScanSuccess(decodedText,decodedResult){
 
-        document.getElementById("status").className="success";
-        document.getElementById("status").innerHTML=
-        "✅ " + (data.message || "Attendance Recorded");
+if(sending) return;
 
-    })
-    .catch(err=>{
+sending=true;
 
-        console.error(err);
+scanner.clear();
 
-        document.getElementById("status").className="error";
-        document.getElementById("status").innerHTML=
-        "❌ Cannot connect to n8n";
+setStatus("⏳ Sending attendance...","wait");
 
-        scanned = false;
+fetch(WEBHOOK_URL,{
 
-    });
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+qr_code:decodedText
+
+})
+
+})
+
+.then(async response=>{
+
+let data={};
+
+try{
+
+data=await response.json();
+
+}catch(e){}
+
+setStatus("✅ "+(data.message||"Attendance Recorded"),"success");
+
+setTimeout(startScanner,2500);
+
+})
+
+.catch(error=>{
+
+console.error(error);
+
+setStatus("❌ Cannot connect to n8n","error");
+
+setTimeout(startScanner,2500);
+
+});
 
 }
 
 function onScanFailure(error){
-    // تجاهل أخطاء القراءة المستمرة
+
 }
 
-Html5Qrcode.getCameras()
-.then(devices => {
+function startScanner(){
 
-    if(devices && devices.length){
+sending=false;
 
-        document.getElementById("status").innerHTML="📷 Camera Ready";
+document.getElementById("reader").innerHTML="";
 
-        const scanner = new Html5QrcodeScanner(
-            "reader",
-            {
-                fps:10,
-                qrbox:{width:250,height:250},
-                rememberLastUsedCamera:true
-            },
-            false
-        );
+scanner=new Html5QrcodeScanner(
 
-        scanner.render(onScanSuccess,onScanFailure);
+"reader",
 
-    }else{
+{
 
-        document.getElementById("status").className="error";
-        document.getElementById("status").innerHTML="❌ No Camera Found";
+fps:10,
 
-    }
+qrbox:250,
 
-})
-.catch(err=>{
+rememberLastUsedCamera:true
 
-    console.error(err);
+},
 
-    document.getElementById("status").className="error";
-    document.getElementById("status").innerHTML=
-    "❌ Please Allow Camera Permission";
+false
 
-});
+);
+
+scanner.render(onScanSuccess,onScanFailure);
+
+}
+
+startScanner();
 
 </script>
 

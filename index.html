@@ -3,207 +3,242 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Student Attendance Scanner</title>
-
 <script src="https://unpkg.com/html5-qrcode"></script>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,Helvetica,sans-serif;
-}
+  :root{
+    --accent:#38bdf8;
+    --accent-2:#22d3ee;
+    --success:#34d399;
+    --warning:#fbbf24;
+    --error:#f87171;
+    --glass:rgba(255,255,255,0.06);
+    --glass-border:rgba(255,255,255,0.14);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:24px;
+    color:#f1f5f9;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(56,189,248,0.16), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(34,211,238,0.12), transparent 50%),
+      linear-gradient(160deg, #060a14 0%, #0b1120 45%, #0a1224 100%);
+    overflow:hidden;
+    position:relative;
+  }
+  .blob{
+    position:absolute; border-radius:50%; filter:blur(70px); opacity:0.35;
+    animation:drift 18s ease-in-out infinite;
+  }
+  .blob1{ width:280px; height:280px; background:var(--accent); top:-80px; left:-80px; }
+  .blob2{ width:320px; height:320px; background:var(--accent-2); bottom:-100px; right:-100px; animation-delay:-9s; }
+  @keyframes drift{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(30px,-20px) scale(1.08); }
+  }
+  .container{
+    width:100%; max-width:460px;
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+    border-radius:24px;
+    padding:32px 28px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+    text-align:center;
+    position:relative;
+    z-index:1;
+    animation:rise 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes rise{ from{ opacity:0; transform:translateY(16px); } to{ opacity:1; transform:translateY(0); } }
 
-body{
-background:#0f172a;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
-color:white;
-}
+  .eyebrow{
+    font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--accent-2); font-weight:600; margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:24px; font-weight:700;
+    background:linear-gradient(90deg,#f8fafc,#bae6fd);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin-bottom:4px;
+  }
+  h2{
+    font-size:14px; font-weight:500; color:#94a3b8;
+    margin-bottom:22px;
+  }
 
-.container{
-width:95%;
-max-width:550px;
-background:#1e293b;
-padding:25px;
-border-radius:20px;
-box-shadow:0 0 25px rgba(0,0,0,.4);
-text-align:center;
-}
+  .scan-frame{
+    position:relative; border-radius:18px; overflow:hidden;
+    border:1px solid var(--glass-border);
+    background:#000;
+    box-shadow:0 0 0 1px rgba(56,189,248,0.15), 0 0 30px rgba(56,189,248,0.08);
+  }
+  #reader{ width:100%; }
+  .corner{
+    position:absolute; width:26px; height:26px; z-index:3; pointer-events:none;
+    border-color:var(--accent-2);
+  }
+  .corner.tl{ top:10px; left:10px; border-top:3px solid; border-left:3px solid; border-radius:6px 0 0 0; }
+  .corner.tr{ top:10px; right:10px; border-top:3px solid; border-right:3px solid; border-radius:0 6px 0 0; }
+  .corner.bl{ bottom:10px; left:10px; border-bottom:3px solid; border-left:3px solid; border-radius:0 0 0 6px; }
+  .corner.br{ bottom:10px; right:10px; border-bottom:3px solid; border-right:3px solid; border-radius:0 0 6px 0; }
+  .scan-line{
+    position:absolute; left:6%; width:88%; height:2px; z-index:2;
+    background:linear-gradient(90deg, transparent, var(--accent-2), transparent);
+    box-shadow:0 0 10px var(--accent-2);
+    animation:sweep 2.4s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0%{ top:8%; opacity:0; }
+    10%{ opacity:1; }
+    50%{ top:92%; opacity:1; }
+    60%{ opacity:0; }
+    100%{ top:8%; opacity:0; }
+  }
+  .scan-frame.locked .scan-line{ display:none; }
 
-h1{
-font-size:30px;
-margin-bottom:8px;
-color:#38bdf8;
-}
+  #status{
+    margin-top:20px;
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:15px; font-weight:600;
+    padding:10px 18px; border-radius:999px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--glass-border);
+    transition:all 0.25s ease;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .wait .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); animation:pulse 1.4s infinite; }
+  .success{ color:var(--success); border-color:rgba(52,211,153,0.35) !important; background:rgba(52,211,153,0.08) !important; }
+  .success .dot{ background:var(--success); box-shadow:0 0 8px var(--success); }
+  .duplicate{ color:var(--warning); border-color:rgba(251,191,36,0.35) !important; background:rgba(251,191,36,0.08) !important; }
+  .duplicate .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); }
+  .error{ color:var(--error); border-color:rgba(248,113,113,0.35) !important; background:rgba(248,113,113,0.08) !important; }
+  .error .dot{ background:var(--error); box-shadow:0 0 8px var(--error); }
+  .wait{ color:var(--warning); }
+  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
 
-h2{
-font-size:20px;
-margin-bottom:20px;
-color:#fff;
-}
+  .footer{
+    margin-top:22px; font-size:12px; color:#64748b;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .footer::before, .footer::after{ content:""; flex:1; height:1px; background:var(--glass-border); }
 
-#reader{
-width:100%;
-margin:auto;
-overflow:hidden;
-border-radius:15px;
-}
-
-#status{
-margin-top:20px;
-font-size:22px;
-font-weight:bold;
-}
-
-.success{
-color:#22c55e;
-}
-
-.error{
-color:#ef4444;
-}
-
-.wait{
-color:#facc15;
-}
-
-.footer{
-margin-top:20px;
-color:#94a3b8;
-font-size:14px;
-}
+  @media (prefers-reduced-motion: reduce){
+    .blob, .scan-line, .dot, .container{ animation:none !important; }
+  }
 </style>
-
 </head>
 <body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
 
 <div class="container">
+  <div class="eyebrow">Live attendance</div>
+  <h1>Student Attendance System</h1>
+  <h2>Mr. Abdullah Elshafay</h2>
 
-<h1>🎓 Student Attendance</h1>
-<h2>Mr Abdullah El-shafey</h2>
+  <div class="scan-frame" id="scanFrame">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="scan-line"></div>
+    <div id="reader"></div>
+  </div>
 
-<div id="reader"></div>
+  <div id="status" class="wait">
+    <span class="dot"></span>
+    <span id="status-text">Waiting for QR code…</span>
+  </div>
 
-<div id="status" class="wait">
-📷 Waiting for QR Code...
-</div>
-
-<div class="footer">
-Powered by n8n & QR Attendance System
-</div>
-
+  <div class="footer">Powered by n8n</div>
 </div>
 
 <script>
+  const WEBHOOK_URL = "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance";
+  let scanner;
+  let sending = false;
 
-const WEBHOOK_URL="https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance";
+  function beep(type){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine";
+      if(type === "success"){ o.frequency.value = 880; g.gain.value = 0.15; }
+      else if(type === "duplicate"){ o.frequency.value = 520; g.gain.value = 0.12; }
+      else { o.frequency.value = 220; g.gain.value = 0.15; }
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      o.stop(ctx.currentTime + 0.35);
+    }catch(e){}
+  }
 
-let scanner;
-let sending=false;
+  function setStatus(message, type){
+    const status = document.getElementById("status");
+    const text = document.getElementById("status-text");
+    status.className = type;
+    text.textContent = message;
+    document.getElementById("scanFrame").classList.toggle("locked", type !== "wait");
+  }
 
-function setStatus(message,type){
+  function onScanSuccess(decodedText){
+    if(sending) return;
+    sending = true;
+    scanner.clear();
+    setStatus("Sending attendance…", "wait");
 
-const status=document.getElementById("status");
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ qr_code: decodedText })
+    })
+    .then(async response => {
+      let data = {};
+      try{ data = await response.json(); }catch(e){}
 
-status.className=type;
-status.innerHTML=message;
+      if(data.already_recorded || (data.message || "").toLowerCase().includes("already")){
+        setStatus(data.message || "Attendance already recorded", "duplicate");
+        beep("duplicate");
+      } else {
+        setStatus(data.message || "Attendance recorded", "success");
+        beep("success");
+      }
+      setTimeout(startScanner, 2500);
+    })
+    .catch(error => {
+      console.error(error);
+      setStatus("Can't connect to n8n", "error");
+      beep("error");
+      setTimeout(startScanner, 2500);
+    });
+  }
 
-}
+  function onScanFailure(){}
 
-function onScanSuccess(decodedText,decodedResult){
+  function startScanner(){
+    sending = false;
+    setStatus("Waiting for QR code…", "wait");
+    document.getElementById("reader").innerHTML = "";
+    scanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 12, qrbox: 240, rememberLastUsedCamera: true },
+      false
+    );
+    scanner.render(onScanSuccess, onScanFailure);
+  }
 
-if(sending) return;
-
-sending=true;
-
-scanner.clear();
-
-setStatus("⏳ Sending attendance...","wait");
-
-fetch(WEBHOOK_URL,{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-qr_code:decodedText
-
-})
-
-})
-
-.then(async response=>{
-
-let data={};
-
-try{
-
-data=await response.json();
-
-}catch(e){}
-
-setStatus("✅ "+(data.message||"Attendance Recorded"),"success");
-
-setTimeout(startScanner,2500);
-
-})
-
-.catch(error=>{
-
-console.error(error);
-
-setStatus("❌ Cannot connect to n8n","error");
-
-setTimeout(startScanner,2500);
-
-});
-
-}
-
-function onScanFailure(error){
-
-}
-
-function startScanner(){
-
-sending=false;
-
-document.getElementById("reader").innerHTML="";
-
-scanner=new Html5QrcodeScanner(
-
-"reader",
-
-{
-
-fps:10,
-
-qrbox:250,
-
-rememberLastUsedCamera:true
-
-},
-
-false
-
-);
-
-scanner.render(onScanSuccess,onScanFailure);
-
-}
-
-startScanner();
-
+  startScanner();
 </script>
-
 </body>
 </html>

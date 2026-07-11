@@ -54,6 +54,27 @@
     margin-bottom:22px;
   }
 
+  /* Mode selector */
+  .mode-toggle{
+    display:flex; gap:8px; margin-bottom:20px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--glass-border);
+    border-radius:14px; padding:5px;
+  }
+  .mode-btn{
+    flex:1; border:none; cursor:pointer;
+    padding:12px 10px; border-radius:10px;
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+    background:transparent; color:#a89c86;
+    transition:all 0.2s ease;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .mode-btn.active{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:#151310;
+  }
+  .mode-btn:not(.active):hover{ color:#f1ede4; }
+
   .scan-frame{
     position:relative; border-radius:16px; overflow:hidden;
     border:1px solid var(--glass-border);
@@ -123,9 +144,18 @@
 <div class="blob blob2"></div>
 
 <div class="container">
-  <div class="eyebrow">Live attendance</div>
+  <div class="eyebrow">Live scanner</div>
   <h1>Student Attendance System</h1>
   <h2>Mr. Abdullah Elshafay</h2>
+
+  <div class="mode-toggle">
+    <button type="button" class="mode-btn active" id="modeAttendance" onclick="setMode('attendance')">
+      🎓 Attendance
+    </button>
+    <button type="button" class="mode-btn" id="modePayment" onclick="setMode('payment')">
+      💳 Payment
+    </button>
+  </div>
 
   <div class="scan-frame" id="scanFrame">
     <div class="corner tl"></div>
@@ -145,9 +175,26 @@
 </div>
 
 <script>
-  const WEBHOOK_URL = "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance";
+  // Two separate n8n webhooks — one per mode.
+  // Replace PAYMENT_WEBHOOK_URL with your real payment workflow's webhook URL.
+  const WEBHOOKS = {
+    attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance",
+    payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/confirm-payment"
+  };
+
+  let currentMode = "attendance";
   let scanner;
   let sending = false;
+
+  function setMode(mode){
+    currentMode = mode;
+    document.getElementById("modeAttendance").classList.toggle("active", mode === "attendance");
+    document.getElementById("modePayment").classList.toggle("active", mode === "payment");
+    // Reset scanner state/UI when switching modes mid-flow
+    if(!sending){
+      setStatus("Waiting for QR code…", "wait");
+    }
+  }
 
   function beep(type){
     try{
@@ -177,12 +224,15 @@
     if(sending) return;
     sending = true;
     scanner.clear();
-    setStatus("Sending attendance…", "wait");
 
-    fetch(WEBHOOK_URL, {
+    const webhookUrl = WEBHOOKS[currentMode];
+    const loadingText = currentMode === "payment" ? "Confirming payment…" : "Sending attendance…";
+    setStatus(loadingText, "wait");
+
+    fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ qr_code: decodedText })
+      body: JSON.stringify({ qr_code: decodedText, mode: currentMode })
     })
     .then(async response => {
       let data = {};
@@ -190,17 +240,26 @@
 
       if(data.success){
         const s = data.student || {};
-        setStatus(`
-          ✅ <b>${data.message}</b><br><br>
-          👤 <b>${s.name ?? ""}</b><br>
-          🎓 Grade: <b>${s.grade ?? ""}</b><br>
-          🕒 Time: <b>${s.time ?? ""}</b><br>
-          📅 Date: <b>${s.date ?? ""}</b>
-        `, "success", true);
+        if(currentMode === "payment"){
+          setStatus(`
+            ✅ <b>${data.message}</b><br><br>
+            👤 <b>${s.name ?? ""}</b><br>
+            📅 Month: <b>${s.month ?? ""}</b><br>
+            🕒 Time: <b>${s.time ?? ""}</b>
+          `, "success", true);
+        } else {
+          setStatus(`
+            ✅ <b>${data.message}</b><br><br>
+            👤 <b>${s.name ?? ""}</b><br>
+            🎓 Grade: <b>${s.grade ?? ""}</b><br>
+            🕒 Time: <b>${s.time ?? ""}</b><br>
+            📅 Date: <b>${s.date ?? ""}</b>
+          `, "success", true);
+        }
         beep("success");
       } else {
         const msg = data.message || "Something went wrong";
-        const alreadyRecorded = data.already_recorded || /already|مسجل/i.test(msg);
+        const alreadyRecorded = data.already_recorded || /already|مسجل|مدفوع/i.test(msg);
         if(alreadyRecorded){
           setStatus("🔴 " + msg, "error");
           beep("error");

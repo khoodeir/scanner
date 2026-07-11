@@ -90,13 +90,21 @@
   }
   .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
   .wait .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); animation:pulse 1.4s infinite; }
-  .success{ color:var(--success); border-color:rgba(52,211,153,0.35) !important; background:rgba(52,211,153,0.08) !important; }
+  .success{ color:var(--success); border-color:rgba(95,180,136,0.35) !important; background:rgba(95,180,136,0.08) !important; }
   .success .dot{ background:var(--success); box-shadow:0 0 8px var(--success); }
-  .duplicate{ color:var(--warning); border-color:rgba(251,191,36,0.35) !important; background:rgba(251,191,36,0.08) !important; }
+  .duplicate{ color:var(--warning); border-color:rgba(212,175,106,0.35) !important; background:rgba(212,175,106,0.08) !important; }
   .duplicate .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); }
-  .error{ color:var(--error); border-color:rgba(248,113,113,0.35) !important; background:rgba(248,113,113,0.08) !important; }
+  .warning{ color:var(--warning); border-color:rgba(212,175,106,0.35) !important; background:rgba(212,175,106,0.08) !important; }
+  .warning .dot{ background:var(--warning); box-shadow:0 0 8px var(--warning); }
+  .error{ color:var(--error); border-color:rgba(200,105,95,0.35) !important; background:rgba(200,105,95,0.08) !important; }
   .error .dot{ background:var(--error); box-shadow:0 0 8px var(--error); }
   .wait{ color:var(--warning); }
+
+  #status.detailed{
+    display:block; text-align:left; border-radius:16px;
+    padding:16px 20px; font-weight:400; line-height:1.7;
+  }
+  #status.detailed .dot{ display:none; }
   @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
 
   .footer{
@@ -157,11 +165,11 @@
     }catch(e){}
   }
 
-  function setStatus(message, type){
+  function setStatus(message, type, detailed){
     const status = document.getElementById("status");
     const text = document.getElementById("status-text");
-    status.className = type;
-    text.textContent = message;
+    status.className = type + (detailed ? " detailed" : "");
+    text.innerHTML = message;
     document.getElementById("scanFrame").classList.toggle("locked", type !== "wait");
   }
 
@@ -180,14 +188,21 @@
       let data = {};
       try{ data = await response.json(); }catch(e){}
 
-      if(data.already_recorded || (data.message || "").toLowerCase().includes("already")){
-        setStatus(data.message || "Attendance already recorded", "duplicate");
-        beep("duplicate");
-      } else {
-        setStatus(data.message || "Attendance recorded", "success");
+      if(data.success){
+        const s = data.student || {};
+        setStatus(`
+          ✅ <b>${data.message}</b><br><br>
+          👤 <b>${s.name ?? ""}</b><br>
+          🎓 Grade: <b>${s.grade ?? ""}</b><br>
+          🕒 Time: <b>${s.time ?? ""}</b><br>
+          📅 Date: <b>${s.date ?? ""}</b>
+        `, "success", true);
         beep("success");
+      } else {
+        setStatus("⚠️ " + (data.message || "Something went wrong"), "warning");
+        beep("duplicate");
       }
-      setTimeout(startScanner, 2500);
+      setTimeout(startScanner, 3500);
     })
     .catch(error => {
       console.error(error);

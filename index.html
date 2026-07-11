@@ -219,8 +219,8 @@
   // Two separate n8n webhooks — one per mode.
   // Replace PAYMENT_WEBHOOK_URL with your real payment workflow's webhook URL.
   const WEBHOOKS = {
-    attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance",
-    payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/confirm-payment"
+    attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
+    payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
   };
 
   let currentMode = "attendance";

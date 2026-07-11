@@ -199,8 +199,15 @@
         `, "success", true);
         beep("success");
       } else {
-        setStatus("⚠️ " + (data.message || "Something went wrong"), "warning");
-        beep("duplicate");
+        const msg = data.message || "Something went wrong";
+        const alreadyRecorded = data.already_recorded || /already|مسجل/i.test(msg);
+        if(alreadyRecorded){
+          setStatus("🔴 " + msg, "error");
+          beep("error");
+        } else {
+          setStatus("⚠️ " + msg, "warning");
+          beep("duplicate");
+        }
       }
       setTimeout(startScanner, 3500);
     })

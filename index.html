@@ -131,6 +131,25 @@
     margin-bottom:18px;
   }
   .payment-fields.visible{ display:flex; }
+
+  .grade-field{ margin-bottom:16px; text-align:left; }
+  .grade-field label{
+    display:block; font-size:11px; color:var(--accent-2);
+    text-transform:uppercase; letter-spacing:0.06em;
+    margin-bottom:6px; font-weight:600;
+  }
+  .grade-field select{
+    width:100%; padding:10px 12px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--glass-border);
+    border-radius:10px; color:#f1ede4;
+    font-family:'Inter',sans-serif; font-size:14px;
+    outline:none; appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23a89c86'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  .grade-field select:focus{ border-color:var(--accent-2); }
+  .grade-field select option{ background:#151310; color:#f1ede4; }
   .field-group{
     flex:1; text-align:left;
   }
@@ -310,11 +329,16 @@
     background:none; border:none; color:#a89c86; font-size:20px; cursor:pointer; line-height:1;
   }
   .modal-close:hover{ color:#f1ede4; }
-  .modal input[type="text"], .modal input[type="number"], .modal input[type="color"], .modal input[type="url"]{
+  .modal input[type="text"], .modal input[type="number"], .modal input[type="color"], .modal input[type="url"], .modal select{
     width:100%; padding:10px 12px; margin-bottom:12px;
     background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
     border-radius:10px; color:#f1ede4; font-family:'Inter',sans-serif; font-size:14px; outline:none;
   }
+  .modal select{ cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23a89c86'/></svg>");
+    background-repeat:no-repeat; background-position:right 14px center;
+  }
+  .modal select option{ background:#171410; color:#f1ede4; }
   .modal input:focus{ border-color:var(--accent-2); }
   .modal label{
     display:block; font-size:11px; color:var(--accent-2); text-transform:uppercase;
@@ -392,6 +416,15 @@
     </button>
   </div>
 
+  <div class="grade-field">
+    <label for="gradeLevel">Grade Level</label>
+    <select id="gradeLevel" onchange="setGrade(this.value)">
+      <option value="first">First Secondary</option>
+      <option value="second">Second Secondary</option>
+      <option value="third">Third Secondary</option>
+    </select>
+  </div>
+
   <div class="payment-fields" id="paymentFields">
     <div class="field-group">
       <label for="payMonth">Month</label>
@@ -445,6 +478,13 @@
     <label for="setDefaultFee">Default Payment Amount (EGP)</label>
     <input type="number" id="setDefaultFee" placeholder="e.g. 300" min="0">
 
+    <label for="setDefaultGrade">Default Grade Level</label>
+    <select id="setDefaultGrade">
+      <option value="first">First Secondary</option>
+      <option value="second">Second Secondary</option>
+      <option value="third">Third Secondary</option>
+    </select>
+
     <label for="setAccentColor">Accent Color</label>
     <input type="color" id="setAccentColor" value="#d4af6a">
 
@@ -490,8 +530,8 @@
   const WEBHOOKS = {
     attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
-    search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
-    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
+    search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/search",
+    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/report"
   };
 
   // In-memory settings (no localStorage — resets on reload, edit via the Settings modal each session)
@@ -499,6 +539,7 @@
     centerName: "",
     logoUrl: "",
     defaultFee: "",
+    defaultGrade: "first",
     accentColor: "#d4af6a"
   };
 
@@ -507,6 +548,9 @@
   let backendStats = null; // set once a webhook response includes a `stats` object
 
   let currentMode = "attendance";
+  let currentGrade = "first";
+  let settingsInitialized = false;
+  const GRADE_LABELS = { first: "First Secondary", second: "Second Secondary", third: "Third Secondary" };
   let scanner;
   let sending = false;
   let lastScanTimes = {}; // qr_code -> timestamp, for the per-code cooldown
@@ -530,15 +574,28 @@
     document.getElementById("setCenterName").value = settings.centerName;
     document.getElementById("setLogoUrl").value = settings.logoUrl;
     document.getElementById("setDefaultFee").value = settings.defaultFee;
+    document.getElementById("setDefaultGrade").value = settings.defaultGrade;
     document.getElementById("setAccentColor").value = settings.accentColor;
+
+    // only force the live grade selector to the default on first load, so it
+    // doesn't override a grade the teacher already picked mid-session
+    if(!settingsInitialized){
+      document.getElementById("gradeLevel").value = settings.defaultGrade;
+      currentGrade = settings.defaultGrade;
+      settingsInitialized = true;
+    }
   }
 
   function saveSettings(){
     settings.centerName = document.getElementById("setCenterName").value.trim();
     settings.logoUrl = document.getElementById("setLogoUrl").value.trim();
     settings.defaultFee = document.getElementById("setDefaultFee").value;
+    settings.defaultGrade = document.getElementById("setDefaultGrade").value;
     settings.accentColor = document.getElementById("setAccentColor").value;
     applySettings();
+    // an explicit save should apply the chosen default grade right away
+    document.getElementById("gradeLevel").value = settings.defaultGrade;
+    currentGrade = settings.defaultGrade;
     closeModal('settingsModal');
   }
 
@@ -572,6 +629,10 @@
     if(!sending){
       setStatus("Waiting for QR code…", "wait");
     }
+  }
+
+  function setGrade(grade){
+    currentGrade = grade;
   }
 
   function beep(type){
@@ -641,7 +702,7 @@
           ${photoHtml}
           <div>
             <div class="result-name">${s.name ?? ""}</div>
-            <div class="result-sub">${kind === "payment" ? (s.time ?? "") : `${s.grade ?? ""} · ${s.time ?? ""}`}</div>
+            <div class="result-sub">${kind === "payment" ? (s.time ?? "") : `${s.grade ?? GRADE_LABELS[currentGrade]} · ${s.time ?? ""}`}</div>
           </div>
         </div>
         ${statsHtml}
@@ -752,7 +813,7 @@
     const webhookUrl = WEBHOOKS[currentMode];
     setLoadingStatus(currentMode === "payment" ? "Confirming payment…" : "Sending attendance…");
 
-    const payload = { qr_code: decodedText, mode: currentMode };
+    const payload = { qr_code: decodedText, mode: currentMode, grade: currentGrade, grade_label: GRADE_LABELS[currentGrade] };
     if(currentMode === "payment"){
       payload.month = month;
       payload.amount = amount;
@@ -827,7 +888,7 @@
     fetch(WEBHOOKS.search, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query, grade: currentGrade })
     })
     .then(async response => {
       let data = {};

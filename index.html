@@ -24,7 +24,7 @@
     min-height:100vh;
     display:flex;
     justify-content:center;
-    align-items:center;
+    align-items:flex-start;
     padding:24px;
     color:#f1ede4;
     background:#0c0b09;
@@ -36,6 +36,24 @@
     border-radius:20px;
     padding:32px 28px;
     text-align:center;
+    position:relative;
+  }
+
+  /* Top bar (settings) */
+  .icon-btn{
+    position:absolute; top:18px;
+    width:36px; height:36px; border-radius:10px;
+    border:1px solid var(--glass-border);
+    background:rgba(255,255,255,0.04);
+    color:#a89c86; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; transition:all .2s ease;
+  }
+  .icon-btn:hover{ color:#f1ede4; border-color:var(--accent-2); }
+  #settingsBtn{ right:18px; }
+
+  .logo-preview{
+    max-height:44px; max-width:140px; margin:0 auto 10px; display:block; border-radius:8px;
   }
 
   .eyebrow{
@@ -51,8 +69,40 @@
   }
   h2{
     font-size:14px; font-weight:500; color:#a89c86;
-    margin-bottom:22px;
+    margin-bottom:8px; min-height:18px;
   }
+
+  /* Dashboard */
+  .dashboard{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+    margin:16px 0 20px;
+  }
+  .stat-card{
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--glass-border);
+    border-radius:12px; padding:10px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .stat-card .icon{ font-size:16px; }
+  .stat-card .value{
+    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:#f1ede4;
+    transition:transform .2s ease;
+  }
+  .stat-card .value.bump{ transform:scale(1.25); color:var(--accent-2); }
+  .stat-card .label{ font-size:9px; color:#a89c86; text-transform:uppercase; letter-spacing:0.05em; }
+
+  /* Toolbar (search / reports) */
+  .toolbar{
+    display:flex; gap:8px; margin-bottom:16px;
+  }
+  .tool-btn{
+    flex:1; padding:10px; border-radius:10px;
+    border:1px solid var(--glass-border);
+    background:rgba(255,255,255,0.04); color:#e8dfd0;
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    cursor:pointer; transition:all .2s ease;
+  }
+  .tool-btn:hover{ border-color:var(--accent-2); color:#f8f4ea; }
 
   /* Mode selector */
   .mode-toggle{
@@ -129,6 +179,15 @@
   }
   .scan-frame.locked .scan-line{ display:none; }
 
+  /* Cooldown badge over scanner */
+  .cooldown-badge{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    z-index:4; background:rgba(12,11,9,0.85); border:1px solid var(--accent-2);
+    color:var(--accent-2); font-size:12px; font-weight:600;
+    padding:5px 12px; border-radius:999px; display:none;
+  }
+  .cooldown-badge.show{ display:block; }
+
   #status{
     margin-top:20px;
     display:inline-flex; align-items:center; gap:8px;
@@ -152,10 +211,79 @@
 
   #status.detailed{
     display:block; text-align:left; border-radius:16px;
-    padding:16px 20px; font-weight:400; line-height:1.7;
+    padding:0; font-weight:400; line-height:1.6; overflow:hidden;
   }
   #status.detailed .dot{ display:none; }
-  @keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.4; transform:scale(0.7); } }
+
+  /* Big result card */
+  .result-card{ padding:18px 20px; }
+  .result-check{
+    font-size:34px; text-align:center; margin-bottom:6px;
+    animation:checkPop .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes checkPop{
+    0%{ transform:scale(0); opacity:0; }
+    60%{ transform:scale(1.3); opacity:1; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .result-title{
+    text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:16px; margin-bottom:12px;
+  }
+  .result-divider{ height:1px; background:var(--glass-border); margin:12px 0; }
+  .result-student{
+    display:flex; align-items:center; gap:12px; margin-bottom:4px;
+  }
+  .result-photo{
+    width:52px; height:52px; border-radius:12px; object-fit:cover; flex-shrink:0;
+    border:1px solid var(--glass-border); background:rgba(255,255,255,0.06);
+  }
+  .result-photo-fallback{
+    width:52px; height:52px; border-radius:12px; flex-shrink:0;
+    border:1px solid var(--glass-border); background:rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+  }
+  .result-name{ font-weight:700; font-size:15px; color:#f8f4ea; }
+  .result-sub{ font-size:12px; color:#a89c86; margin-top:2px; }
+  .result-stats{
+    display:flex; gap:8px; margin-top:14px;
+  }
+  .result-stat{
+    flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
+    border-radius:10px; padding:8px 4px; text-align:center;
+  }
+  .result-stat .num{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+  .result-stat .lab{ font-size:9px; color:#a89c86; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+  .chip{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700;
+  }
+  .chip.paid{ background:rgba(95,180,136,0.15); color:var(--success); }
+  .chip.unpaid{ background:rgba(200,105,95,0.15); color:var(--error); }
+
+  /* Spinner */
+  .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid rgba(255,255,255,0.15); border-top-color:var(--accent-2);
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* History */
+  .history{ margin-top:22px; text-align:left; }
+  .history-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--accent-2); font-weight:700; margin-bottom:10px;
+  }
+  .history-list{ display:flex; flex-direction:column; gap:0; }
+  .history-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 2px; border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:13px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-name{ display:flex; align-items:center; gap:8px; color:#e8dfd0; }
+  .history-time{ color:#7a7263; font-size:12px; }
+  .history-empty{ color:#7a7263; font-size:12px; text-align:center; padding:10px 0; }
 
   .footer{
     margin-top:22px; font-size:12px; color:#7a7263;
@@ -163,19 +291,97 @@
   }
   .footer::before, .footer::after{ content:""; flex:1; height:1px; background:var(--glass-border); }
 
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    width:100%; max-width:380px; max-height:85vh; overflow-y:auto;
+    background:#171410; border:1px solid var(--glass-border); border-radius:18px;
+    padding:22px 20px; text-align:left;
+  }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;
+  }
+  .modal-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; }
+  .modal-close{
+    background:none; border:none; color:#a89c86; font-size:20px; cursor:pointer; line-height:1;
+  }
+  .modal-close:hover{ color:#f1ede4; }
+  .modal input[type="text"], .modal input[type="number"], .modal input[type="color"], .modal input[type="url"]{
+    width:100%; padding:10px 12px; margin-bottom:12px;
+    background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
+    border-radius:10px; color:#f1ede4; font-family:'Inter',sans-serif; font-size:14px; outline:none;
+  }
+  .modal input:focus{ border-color:var(--accent-2); }
+  .modal label{
+    display:block; font-size:11px; color:var(--accent-2); text-transform:uppercase;
+    letter-spacing:0.06em; margin-bottom:6px; font-weight:600;
+  }
+  .modal-btn{
+    width:100%; padding:12px; border:none; border-radius:10px; cursor:pointer;
+    font-weight:700; font-size:14px; margin-top:4px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#151310;
+  }
+  .report-list{ display:flex; flex-direction:column; gap:8px; }
+  .report-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; border-radius:10px; border:1px solid var(--glass-border);
+    background:rgba(255,255,255,0.04); cursor:pointer; font-size:14px; color:#e8dfd0;
+    transition:all .2s ease;
+  }
+  .report-item:hover{ border-color:var(--accent-2); color:#f8f4ea; }
+  .report-result{
+    margin-top:14px; padding:14px; border-radius:10px; background:rgba(255,255,255,0.04);
+    border:1px solid var(--glass-border); font-size:13px; line-height:1.7; display:none;
+  }
+  .report-result.show{ display:block; }
+
   @media (prefers-reduced-motion: reduce){
-    .blob, .scan-line, .dot, .container{ animation:none !important; }
+    .scan-line, .dot, .result-check, .spinner{ animation:none !important; }
   }
 </style>
 </head>
 <body>
-<div class="blob blob1"></div>
-<div class="blob blob2"></div>
 
 <div class="container">
+  <button type="button" class="icon-btn" id="settingsBtn" onclick="openModal('settingsModal')" title="Settings">⚙️</button>
+
+  <img id="logoPreview" class="logo-preview" style="display:none;">
+
   <div class="eyebrow">Live scanner</div>
   <h1>Student Attendance System</h1>
-  <h2>Mr. Abdullah Elshafay</h2>
+  <h2 id="centerNameDisplay"></h2>
+
+  <div class="dashboard">
+    <div class="stat-card">
+      <div class="icon">👨‍🎓</div>
+      <div class="value" id="statStudents">–</div>
+      <div class="label">Students</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">✅</div>
+      <div class="value" id="statPresent">0</div>
+      <div class="label">Present</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">❌</div>
+      <div class="value" id="statAbsent">–</div>
+      <div class="label">Absent</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">💰</div>
+      <div class="value" id="statPaid">0</div>
+      <div class="label">Paid</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="tool-btn" onclick="openModal('searchModal')">🔍 Search Student</button>
+    <button type="button" class="tool-btn" onclick="openModal('reportsModal')">📊 Reports</button>
+  </div>
 
   <div class="mode-toggle">
     <button type="button" class="mode-btn active" id="modeAttendance" onclick="setMode('attendance')">
@@ -199,6 +405,7 @@
   <div class="hint" id="paymentHint"></div>
 
   <div class="scan-frame" id="scanFrame">
+    <div class="cooldown-badge" id="cooldownBadge">⏳ Wait <span id="cooldownSeconds">5</span>s</div>
     <div class="corner tl"></div>
     <div class="corner tr"></div>
     <div class="corner bl"></div>
@@ -212,21 +419,137 @@
     <span id="status-text">Waiting for QR code…</span>
   </div>
 
+  <div class="history">
+    <div class="history-title">Last Scans</div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" id="historyEmpty">No scans yet</div>
+    </div>
+  </div>
+
   <div class="footer">Powered by Khodeir</div>
 </div>
 
+<!-- Settings modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+    </div>
+    <label for="setCenterName">Center Name</label>
+    <input type="text" id="setCenterName" placeholder="e.g. Al Noor Center">
+
+    <label for="setLogoUrl">Logo URL</label>
+    <input type="url" id="setLogoUrl" placeholder="https://…/logo.png">
+
+    <label for="setDefaultFee">Default Payment Amount (EGP)</label>
+    <input type="number" id="setDefaultFee" placeholder="e.g. 300" min="0">
+
+    <label for="setAccentColor">Accent Color</label>
+    <input type="color" id="setAccentColor" value="#d4af6a">
+
+    <button class="modal-btn" onclick="saveSettings()">Save Settings</button>
+  </div>
+</div>
+
+<!-- Search modal -->
+<div class="modal-overlay" id="searchModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Search Student</div>
+      <button class="modal-close" onclick="closeModal('searchModal')">×</button>
+    </div>
+    <input type="text" id="searchInput" placeholder="Student name…">
+    <button class="modal-btn" onclick="runSearch()">Search</button>
+    <div class="report-result" id="searchResult"></div>
+  </div>
+</div>
+
+<!-- Reports modal -->
+<div class="modal-overlay" id="reportsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Reports</div>
+      <button class="modal-close" onclick="closeModal('reportsModal')">×</button>
+    </div>
+    <div class="report-list">
+      <div class="report-item" onclick="runReport('today_attendance')">Today's Attendance</div>
+      <div class="report-item" onclick="runReport('today_payment')">Today's Payment</div>
+      <div class="report-item" onclick="runReport('this_month')">This Month</div>
+      <div class="report-item" onclick="runReport('top_students')">Top Students</div>
+      <div class="report-item" onclick="runReport('export_pdf')">Export PDF</div>
+      <div class="report-item" onclick="runReport('export_excel')">Export Excel</div>
+    </div>
+    <div class="report-result" id="reportResult"></div>
+  </div>
+</div>
+
 <script>
-  // Two separate n8n webhooks — one per mode.
-  // Replace PAYMENT_WEBHOOK_URL with your real payment workflow's webhook URL.
+  // Webhooks — one per workflow. Point these at your real n8n endpoints.
+  // Expected JSON response shapes are documented next to each call below.
   const WEBHOOKS = {
     attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
-    payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
+    payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
+    search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/search",
+    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/report"
   };
+
+  // In-memory settings (no localStorage — resets on reload, edit via the Settings modal each session)
+  let settings = {
+    centerName: "",
+    logoUrl: "",
+    defaultFee: "",
+    accentColor: "#d4af6a"
+  };
+
+  // In-memory session stats (used as a fallback when the webhook response has no `stats` block)
+  let sessionStats = { present: 0, paid: 0 };
+  let backendStats = null; // set once a webhook response includes a `stats` object
 
   let currentMode = "attendance";
   let scanner;
   let sending = false;
+  let lastScanTimes = {}; // qr_code -> timestamp, for the per-code cooldown
+  const COOLDOWN_MS = 5000;
+  let history = [];
+  const HISTORY_LIMIT = 8;
 
+  /* ---------- Settings ---------- */
+  function applySettings(){
+    document.documentElement.style.setProperty('--accent', settings.accentColor);
+    const centerEl = document.getElementById("centerNameDisplay");
+    centerEl.textContent = settings.centerName || "";
+    const logoEl = document.getElementById("logoPreview");
+    if(settings.logoUrl){
+      logoEl.src = settings.logoUrl;
+      logoEl.style.display = "block";
+    } else {
+      logoEl.style.display = "none";
+    }
+    // reflect current values back into the settings form
+    document.getElementById("setCenterName").value = settings.centerName;
+    document.getElementById("setLogoUrl").value = settings.logoUrl;
+    document.getElementById("setDefaultFee").value = settings.defaultFee;
+    document.getElementById("setAccentColor").value = settings.accentColor;
+  }
+
+  function saveSettings(){
+    settings.centerName = document.getElementById("setCenterName").value.trim();
+    settings.logoUrl = document.getElementById("setLogoUrl").value.trim();
+    settings.defaultFee = document.getElementById("setDefaultFee").value;
+    settings.accentColor = document.getElementById("setAccentColor").value;
+    applySettings();
+    closeModal('settingsModal');
+  }
+
+  /* ---------- Modals ---------- */
+  function openModal(id){ document.getElementById(id).classList.add('open'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(ov=>{
+    ov.addEventListener('click', e=>{ if(e.target === ov) ov.classList.remove('open'); });
+  });
+
+  /* ---------- Mode ---------- */
   function setMode(mode){
     currentMode = mode;
     document.getElementById("modeAttendance").classList.toggle("active", mode === "attendance");
@@ -234,14 +557,18 @@
     document.getElementById("paymentFields").classList.toggle("visible", mode === "payment");
     document.getElementById("paymentHint").textContent = "";
 
-    if(mode === "payment" && !document.getElementById("payMonth").value){
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      document.getElementById("payMonth").value = `${yyyy}-${mm}`;
+    if(mode === "payment"){
+      if(!document.getElementById("payMonth").value){
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        document.getElementById("payMonth").value = `${yyyy}-${mm}`;
+      }
+      if(!document.getElementById("payAmount").value && settings.defaultFee){
+        document.getElementById("payAmount").value = settings.defaultFee;
+      }
     }
 
-    // Reset scanner state/UI when switching modes mid-flow
     if(!sending){
       setStatus("Waiting for QR code…", "wait");
     }
@@ -263,6 +590,7 @@
     }catch(e){}
   }
 
+  /* ---------- Status rendering ---------- */
   function setStatus(message, type, detailed){
     const status = document.getElementById("status");
     const text = document.getElementById("status-text");
@@ -271,8 +599,140 @@
     document.getElementById("scanFrame").classList.toggle("locked", type !== "wait");
   }
 
+  function setLoadingStatus(message){
+    const status = document.getElementById("status");
+    status.className = "wait";
+    status.innerHTML = `<div class="spinner"></div><span id="status-text">${message}</span>`;
+    document.getElementById("scanFrame").classList.add("locked");
+  }
+
+  function renderResultCard(kind, s, extra){
+    // kind: "attendance" | "payment"
+    const status = document.getElementById("status");
+    status.className = "success detailed";
+
+    const photoHtml = s.image_url
+      ? `<img class="result-photo" src="${s.image_url}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'result-photo-fallback',innerText:'👤'}))">`
+      : `<div class="result-photo-fallback">👤</div>`;
+
+    let statsHtml = "";
+    if(kind === "attendance"){
+      statsHtml = `
+        <div class="result-stats">
+          <div class="result-stat"><div class="num">${s.attendance_count ?? "–"}</div><div class="lab">Attendance</div></div>
+          <div class="result-stat"><div class="num">${s.absence_count ?? "–"}</div><div class="lab">Absence</div></div>
+          <div class="result-stat"><div class="chip ${s.payment_status === 'paid' ? 'paid' : 'unpaid'}">${s.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</div><div class="lab">Payment</div></div>
+        </div>`;
+    } else {
+      statsHtml = `
+        <div class="result-stats">
+          <div class="result-stat"><div class="num">${s.month ?? extra.month ?? "–"}</div><div class="lab">Month</div></div>
+          <div class="result-stat"><div class="num">${s.amount ?? extra.amount ?? "–"}</div><div class="lab">EGP</div></div>
+          <div class="result-stat"><div class="chip paid">Paid</div><div class="lab">Status</div></div>
+        </div>`;
+    }
+
+    status.innerHTML = `
+      <div class="result-card">
+        <div class="result-check">✅</div>
+        <div class="result-title">${kind === "payment" ? "Payment Confirmed" : "Attendance Recorded"}</div>
+        <div class="result-divider"></div>
+        <div class="result-student">
+          ${photoHtml}
+          <div>
+            <div class="result-name">${s.name ?? ""}</div>
+            <div class="result-sub">${kind === "payment" ? (s.time ?? "") : `${s.grade ?? ""} · ${s.time ?? ""}`}</div>
+          </div>
+        </div>
+        ${statsHtml}
+      </div>`;
+    document.getElementById("scanFrame").classList.add("locked");
+  }
+
+  /* ---------- Dashboard ---------- */
+  function bumpStat(el){
+    el.classList.add("bump");
+    setTimeout(()=>el.classList.remove("bump"), 250);
+  }
+
+  function updateDashboard(stats, kind){
+    if(stats){
+      backendStats = stats;
+      document.getElementById("statStudents").textContent = stats.students_today ?? "–";
+      document.getElementById("statPresent").textContent = stats.present ?? "–";
+      document.getElementById("statAbsent").textContent = stats.absent ?? "–";
+      document.getElementById("statPaid").textContent = stats.paid_today ?? "–";
+      return;
+    }
+    // Fallback: no backend stats provided, track locally for this session only.
+    if(kind === "attendance"){
+      sessionStats.present += 1;
+      const el = document.getElementById("statPresent");
+      el.textContent = sessionStats.present;
+      bumpStat(el);
+    } else if(kind === "payment"){
+      sessionStats.paid += 1;
+      const el = document.getElementById("statPaid");
+      el.textContent = sessionStats.paid;
+      bumpStat(el);
+    }
+  }
+
+  /* ---------- History ---------- */
+  function pushHistory(name, time, ok){
+    history.unshift({ name, time, ok });
+    if(history.length > HISTORY_LIMIT) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory(){
+    const list = document.getElementById("historyList");
+    if(history.length === 0){
+      list.innerHTML = `<div class="history-empty" id="historyEmpty">No scans yet</div>`;
+      return;
+    }
+    list.innerHTML = history.map(h => `
+      <div class="history-item">
+        <div class="history-name">${h.ok ? "✔" : "✖"} ${h.name}</div>
+        <div class="history-time">${h.time}</div>
+      </div>
+    `).join("");
+  }
+
+  /* ---------- Cooldown ---------- */
+  function isOnCooldown(code){
+    const last = lastScanTimes[code];
+    if(!last) return 0;
+    const elapsed = Date.now() - last;
+    return elapsed < COOLDOWN_MS ? COOLDOWN_MS - elapsed : 0;
+  }
+
+  function showCooldownBadge(remainingMs){
+    const badge = document.getElementById("cooldownBadge");
+    const secondsEl = document.getElementById("cooldownSeconds");
+    let remaining = Math.ceil(remainingMs / 1000);
+    secondsEl.textContent = remaining;
+    badge.classList.add("show");
+    const interval = setInterval(()=>{
+      remaining -= 1;
+      if(remaining <= 0){
+        clearInterval(interval);
+        badge.classList.remove("show");
+      } else {
+        secondsEl.textContent = remaining;
+      }
+    }, 1000);
+  }
+
+  /* ---------- Scanning ---------- */
   function onScanSuccess(decodedText){
     if(sending) return;
+
+    const cooldownRemaining = isOnCooldown(decodedText);
+    if(cooldownRemaining > 0){
+      showCooldownBadge(cooldownRemaining);
+      return;
+    }
 
     let month = "";
     let amount = "";
@@ -285,12 +745,12 @@
       }
     }
 
+    lastScanTimes[decodedText] = Date.now();
     sending = true;
     scanner.clear();
 
     const webhookUrl = WEBHOOKS[currentMode];
-    const loadingText = currentMode === "payment" ? "Confirming payment…" : "Sending attendance…";
-    setStatus(loadingText, "wait");
+    setLoadingStatus(currentMode === "payment" ? "Confirming payment…" : "Sending attendance…");
 
     const payload = { qr_code: decodedText, mode: currentMode };
     if(currentMode === "payment"){
@@ -309,23 +769,11 @@
 
       if(data.success){
         const s = data.student || {};
+        renderResultCard(currentMode, s, { month, amount });
+        updateDashboard(data.stats, currentMode);
+        pushHistory(s.name || "Student", s.time || "", true);
         if(currentMode === "payment"){
-          setStatus(`
-            ✅ <b>${data.message}</b><br><br>
-            👤 <b>${s.name ?? ""}</b><br>
-            📅 Month: <b>${s.month ?? month}</b><br>
-            💰 Amount: <b>${s.amount ?? amount} EGP</b><br>
-            🕒 Time: <b>${s.time ?? ""}</b>
-          `, "success", true);
           document.getElementById("payAmount").value = "";
-        } else {
-          setStatus(`
-            ✅ <b>${data.message}</b><br><br>
-            👤 <b>${s.name ?? ""}</b><br>
-            🎓 Grade: <b>${s.grade ?? ""}</b><br>
-            🕒 Time: <b>${s.time ?? ""}</b><br>
-            📅 Date: <b>${s.date ?? ""}</b>
-          `, "success", true);
         }
         beep("success");
       } else {
@@ -338,6 +786,7 @@
           setStatus("⚠️ " + msg, "warning");
           beep("duplicate");
         }
+        pushHistory(data.student?.name || "Unknown", new Date().toLocaleTimeString(), false);
       }
       setTimeout(startScanner, 3500);
     })
@@ -363,6 +812,85 @@
     scanner.render(onScanSuccess, onScanFailure);
   }
 
+  /* ---------- Search ---------- */
+  function runSearch(){
+    const query = document.getElementById("searchInput").value.trim();
+    const resultEl = document.getElementById("searchResult");
+    if(!query){
+      resultEl.classList.add("show");
+      resultEl.innerHTML = "Type a student name to search.";
+      return;
+    }
+    resultEl.classList.add("show");
+    resultEl.innerHTML = `<div class="spinner" style="display:inline-block;margin-right:8px;vertical-align:middle;"></div>Searching…`;
+
+    fetch(WEBHOOKS.search, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    })
+    .then(async response => {
+      let data = {};
+      try{ data = await response.json(); }catch(e){}
+      if(data.success && data.student){
+        const s = data.student;
+        resultEl.innerHTML = `
+          <b>${s.name ?? ""}</b><br>
+          Attendance: <b>${s.attendance_count ?? "–"}</b> &nbsp; Absence: <b>${s.absence_count ?? "–"}</b><br>
+          Payment: <span class="chip ${s.payment_status === 'paid' ? 'paid' : 'unpaid'}">${s.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span><br>
+          Last Attendance: <b>${s.last_attendance ?? "–"}</b>
+        `;
+      } else {
+        resultEl.innerHTML = data.message || "No student found.";
+      }
+    })
+    .catch(()=>{
+      resultEl.innerHTML = "Can't connect to n8n.";
+    });
+  }
+
+  /* ---------- Reports ---------- */
+  function runReport(type){
+    const resultEl = document.getElementById("reportResult");
+    resultEl.classList.add("show");
+    resultEl.innerHTML = `<div class="spinner" style="display:inline-block;margin-right:8px;vertical-align:middle;"></div>Loading…`;
+
+    fetch(WEBHOOKS.report, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ report_type: type })
+    })
+    .then(async response => {
+      let data = {};
+      try{ data = await response.json(); }catch(e){}
+
+      if(!data.success){
+        resultEl.innerHTML = data.message || "Couldn't load this report.";
+        return;
+      }
+
+      if(type === "export_pdf" || type === "export_excel"){
+        if(data.url){
+          window.open(data.url, "_blank");
+          resultEl.innerHTML = "Export ready — opening in a new tab.";
+        } else {
+          resultEl.innerHTML = "Export URL missing from response.";
+        }
+        return;
+      }
+
+      // Generic key/value rendering for stat-style reports
+      const rows = Object.entries(data.data || {}).map(
+        ([k, v]) => `<div>${k.replace(/_/g," ")}: <b>${v}</b></div>`
+      ).join("");
+      resultEl.innerHTML = rows || "No data returned.";
+    })
+    .catch(()=>{
+      resultEl.innerHTML = "Can't connect to n8n.";
+    });
+  }
+
+  applySettings();
   startScanner();
 </script>
 </body>

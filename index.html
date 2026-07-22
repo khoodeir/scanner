@@ -746,21 +746,6 @@
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-title">💰 Revenue Last 30 Days</div>
-        <div class="dash-chart-wrap">
-          <canvas id="revenueChart"></canvas>
-          <div class="dash-chart-empty" id="revenueChartEmpty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title">🏆 Top Students</div>
-        <div class="dash-list" id="topStudentsList">
-          <div class="dash-list-empty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-section">
         <div class="dash-section-title">❌ Students Who Didn't Pay</div>
         <div class="dash-list" id="unpaidStudentsList">
           <div class="dash-list-empty">No data yet</div>
@@ -1559,16 +1544,6 @@
     const revenue = d.revenue;
     document.getElementById('statRevenue').textContent = revenue != null ? `${Number(revenue).toLocaleString()} EGP` : "–";
     document.getElementById('statRevenueDelta').innerHTML = formatDelta(d.revenue_delta);
-
-    const collectionRate = d.collection_rate ?? d.collection;
-    document.getElementById('statCollection').textContent = collectionRate != null ? `${collectionRate}%` : "–";
-    document.getElementById('statCollectionDelta').innerHTML = formatDelta(d.collection_delta);
-
-    // Charts (only rendered when historical series data is actually sent)
-    const attendanceSeries = d.attendance_chart || d.attendance_last_7_days || [];
-    const revenueSeries = d.revenue_last_30_days || d.revenue_chart || [];
-    renderAttendanceChart(attendanceSeries);
-    renderRevenueChart(revenueSeries);
 
     // Top students
     const topList = document.getElementById('topStudentsList');

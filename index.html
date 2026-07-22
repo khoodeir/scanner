@@ -1565,8 +1565,8 @@
     document.getElementById('statCollectionDelta').innerHTML = formatDelta(d.collection_delta);
 
     // Charts (only rendered when historical series data is actually sent)
-    const attendanceSeries = d.attendance_last_7_days || [];
-    const revenueSeries = d.revenue_last_30_days || [];
+    const attendanceSeries = d.attendance_chart || d.attendance_last_7_days || [];
+    const revenueSeries = d.revenue_last_30_days || d.revenue_chart || [];
     renderAttendanceChart(attendanceSeries);
     renderRevenueChart(revenueSeries);
 

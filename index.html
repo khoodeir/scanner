@@ -437,6 +437,20 @@
 
   /* Analytics Dashboard */
   .dashboard-modal{ max-width:480px; }
+  .dash-grade-toggle{
+    display:flex; gap:6px; margin-bottom:16px;
+    background:rgba(28,61,90,0.04); border:1px solid var(--glass-border);
+    border-radius:12px; padding:4px;
+  }
+  .dash-grade-btn{
+    flex:1; border:none; cursor:pointer;
+    padding:9px 6px; border-radius:9px;
+    font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600;
+    background:transparent; color:#5c7185;
+    transition:all 0.2s ease;
+  }
+  .dash-grade-btn.active{ background:var(--accent); color:#ffffff; }
+  .dash-grade-btn:not(.active):hover{ color:var(--accent); }
   .dash-loading{
     display:flex; align-items:center; justify-content:center; gap:10px;
     padding:36px 0; color:#5c7185; font-size:13px;
@@ -680,6 +694,12 @@
     <div class="modal-header">
       <div class="modal-title">📊 Analytics Dashboard</div>
       <button class="modal-close" onclick="closeModal('dashboardModal')">×</button>
+    </div>
+
+    <div class="dash-grade-toggle" id="dashGradeToggle">
+      <button type="button" class="dash-grade-btn active" data-grade="first" onclick="setDashboardGrade('first')">First Secondary</button>
+      <button type="button" class="dash-grade-btn" data-grade="second" onclick="setDashboardGrade('second')">Second Secondary</button>
+      <button type="button" class="dash-grade-btn" data-grade="third" onclick="setDashboardGrade('third')">Third Secondary</button>
     </div>
 
     <div class="dash-loading" id="dashLoading">
@@ -1440,6 +1460,15 @@
   /* ---------- Analytics Dashboard ---------- */
   let attendanceChartInstance = null;
   let revenueChartInstance = null;
+  let dashboardGrade = "first";
+
+  function setDashboardGrade(grade){
+    dashboardGrade = grade;
+    document.querySelectorAll('#dashGradeToggle .dash-grade-btn').forEach(btn=>{
+      btn.classList.toggle('active', btn.dataset.grade === grade);
+    });
+    loadDashboard();
+  }
 
   function openDashboard(){
     openModal('dashboardModal');
@@ -1462,7 +1491,7 @@
     fetch(WEBHOOKS.report, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "dashboard" })
+      body: JSON.stringify({ action: "dashboard", grade: dashboardGrade })
     })
     .then(async response => {
       let data = {};

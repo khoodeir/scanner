@@ -490,6 +490,11 @@
     background:rgba(28,61,90,0.03); border:1px solid var(--glass-border);
     border-radius:12px; padding:12px; height:170px; position:relative;
   }
+  .dash-chart-empty{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    color:#8a97a5; font-size:12px;
+  }
+  .dash-chart-empty.show{ display:flex; }
   .dash-list{ display:flex; flex-direction:column; gap:0; }
   .dash-list-item{
     display:flex; align-items:center; justify-content:space-between;
@@ -734,12 +739,18 @@
 
       <div class="dash-section">
         <div class="dash-section-title">📈 Attendance Last 7 Days</div>
-        <div class="dash-chart-wrap"><canvas id="attendanceChart"></canvas></div>
+        <div class="dash-chart-wrap">
+          <canvas id="attendanceChart"></canvas>
+          <div class="dash-chart-empty" id="attendanceChartEmpty">No data yet</div>
+        </div>
       </div>
 
       <div class="dash-section">
         <div class="dash-section-title">💰 Revenue Last 30 Days</div>
-        <div class="dash-chart-wrap"><canvas id="revenueChart"></canvas></div>
+        <div class="dash-chart-wrap">
+          <canvas id="revenueChart"></canvas>
+          <div class="dash-chart-empty" id="revenueChartEmpty">No data yet</div>
+        </div>
       </div>
 
       <div class="dash-section">
@@ -1517,20 +1528,43 @@
   }
 
   function renderDashboard(d){
+    const topStudents = d.top_students ?? d.topStudents ?? [];
+    const unpaidStudents = d.unpaid_students ?? d.unpaid ?? [];
+
+    // Normalize each top student to a 0-100 attendance percentage, whichever
+    // field n8n happens to send (percentage, attendance_percentage, or raw
+    // attendance/absences counts).
+    const topStudentsNormalized = topStudents.map(s => {
+      let pct = s.percentage ?? s.attendance_percentage;
+      if(pct == null && s.attendance != null && s.absences != null){
+        const total = Number(s.attendance) + Number(s.absences);
+        if(total > 0) pct = Math.round((Number(s.attendance) / total) * 100);
+      }
+      return { name: s.name ?? "", percentage: pct };
+    });
+
     // Stat cards
-    document.getElementById('statStudents').textContent = d.students_count ?? "–";
+    const studentsCount = d.students_count ?? d.students;
+    document.getElementById('statStudents').textContent = studentsCount ?? "–";
     document.getElementById('statStudentsDelta').innerHTML = formatDelta(d.students_delta);
 
-    document.getElementById('statAttendance').textContent = d.attendance_rate != null ? `${d.attendance_rate}%` : "–";
+    let attendanceRate = d.attendance_rate;
+    if(attendanceRate == null && topStudentsNormalized.length){
+      const values = topStudentsNormalized.map(s => s.percentage).filter(v => v != null);
+      if(values.length) attendanceRate = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+    }
+    document.getElementById('statAttendance').textContent = attendanceRate != null ? `${attendanceRate}%` : "–";
     document.getElementById('statAttendanceDelta').innerHTML = formatDelta(d.attendance_delta);
 
-    document.getElementById('statRevenue').textContent = d.revenue != null ? `${Number(d.revenue).toLocaleString()} EGP` : "–";
+    const revenue = d.revenue;
+    document.getElementById('statRevenue').textContent = revenue != null ? `${Number(revenue).toLocaleString()} EGP` : "–";
     document.getElementById('statRevenueDelta').innerHTML = formatDelta(d.revenue_delta);
 
-    document.getElementById('statCollection').textContent = d.collection_rate != null ? `${d.collection_rate}%` : "–";
+    const collectionRate = d.collection_rate ?? d.collection;
+    document.getElementById('statCollection').textContent = collectionRate != null ? `${collectionRate}%` : "–";
     document.getElementById('statCollectionDelta').innerHTML = formatDelta(d.collection_delta);
 
-    // Charts
+    // Charts (only rendered when historical series data is actually sent)
     const attendanceSeries = d.attendance_last_7_days || [];
     const revenueSeries = d.revenue_last_30_days || [];
     renderAttendanceChart(attendanceSeries);
@@ -1538,21 +1572,19 @@
 
     // Top students
     const topList = document.getElementById('topStudentsList');
-    const topStudents = d.top_students || [];
-    if(topStudents.length === 0){
+    if(topStudentsNormalized.length === 0){
       topList.innerHTML = `<div class="dash-list-empty">No data yet</div>`;
     } else {
-      topList.innerHTML = topStudents.map((s, i) => `
+      topList.innerHTML = topStudentsNormalized.map((s, i) => `
         <div class="dash-list-item">
-          <div class="dash-list-name"><span class="dash-list-rank">${i + 1}</span>${s.name ?? ""}</div>
-          <div class="dash-list-value">${s.percentage != null ? s.percentage + "%" : (s.attendance_percentage != null ? s.attendance_percentage + "%" : "–")}</div>
+          <div class="dash-list-name"><span class="dash-list-rank">${i + 1}</span>${s.name}</div>
+          <div class="dash-list-value">${s.percentage != null ? s.percentage + "%" : "–"}</div>
         </div>
       `).join("");
     }
 
     // Unpaid students
     const unpaidList = document.getElementById('unpaidStudentsList');
-    const unpaidStudents = d.unpaid_students || [];
     if(unpaidStudents.length === 0){
       unpaidList.innerHTML = `<div class="dash-list-empty">Everyone has paid 🎉</div>`;
     } else {
@@ -1566,8 +1598,18 @@
 
   function renderAttendanceChart(series){
     const ctx = document.getElementById('attendanceChart');
-    if(attendanceChartInstance){ attendanceChartInstance.destroy(); }
+    const emptyEl = document.getElementById('attendanceChartEmpty');
+    if(attendanceChartInstance){ attendanceChartInstance.destroy(); attendanceChartInstance = null; }
+
+    if(!series.length){
+      ctx.style.display = 'none';
+      emptyEl.classList.add('show');
+      return;
+    }
+    ctx.style.display = 'block';
+    emptyEl.classList.remove('show');
     if(typeof Chart === "undefined") return;
+
     attendanceChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
@@ -1595,8 +1637,18 @@
 
   function renderRevenueChart(series){
     const ctx = document.getElementById('revenueChart');
-    if(revenueChartInstance){ revenueChartInstance.destroy(); }
+    const emptyEl = document.getElementById('revenueChartEmpty');
+    if(revenueChartInstance){ revenueChartInstance.destroy(); revenueChartInstance = null; }
+
+    if(!series.length){
+      ctx.style.display = 'none';
+      emptyEl.classList.add('show');
+      return;
+    }
+    ctx.style.display = 'block';
+    emptyEl.classList.remove('show');
     if(typeof Chart === "undefined") return;
+
     revenueChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {

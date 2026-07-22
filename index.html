@@ -163,6 +163,7 @@
     text-transform:uppercase; letter-spacing:0.06em;
     margin-bottom:6px; font-weight:600;
   }
+  .grade-select-wrap{ position:relative; }
   .grade-field select{
     width:100%; padding:10px 12px;
     background:rgba(28,61,90,0.03);
@@ -175,6 +176,17 @@
   }
   .grade-field select:focus{ border-color:var(--accent-2); }
   .grade-field select option{ background:#ffffff; color:#1c2733; }
+  .grade-field select:disabled{
+    cursor:not-allowed; opacity:0.6; background-color:rgba(28,61,90,0.06);
+  }
+  .grade-lock-overlay{
+    position:absolute; inset:0; display:none; cursor:not-allowed; z-index:2; border-radius:10px;
+  }
+  .grade-lock-overlay.show{ display:block; }
+  .grade-lock-hint{
+    font-size:11px; color:#8a97a5; margin-top:6px; display:none;
+  }
+  .grade-lock-hint.show{ display:block; }
   .field-group{
     flex:1; text-align:left;
   }
@@ -422,6 +434,44 @@
   }
   .report-result.show{ display:block; }
 
+  /* Search-by selector */
+  .search-type-toggle{
+    display:flex; gap:6px; margin-bottom:12px;
+    background:rgba(28,61,90,0.04); border:1px solid var(--glass-border);
+    border-radius:12px; padding:4px;
+  }
+  .search-type-btn{
+    flex:1; border:none; cursor:pointer;
+    padding:9px 6px; border-radius:9px;
+    font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
+    background:transparent; color:#5c7185;
+    transition:all 0.2s ease;
+  }
+  .search-type-btn.active{ background:var(--accent); color:#ffffff; }
+  .search-type-btn:not(.active):hover{ color:var(--accent); }
+
+  .search-qr-frame{
+    display:none; position:relative; border-radius:14px; overflow:hidden;
+    border:1px solid var(--glass-border); background:#000; margin-bottom:12px;
+  }
+  .search-qr-frame.active{ display:block; }
+  .search-qr-frame #searchReader{ width:100%; }
+  .search-qr-placeholder{
+    padding:30px 16px; text-align:center; color:#8a97a5; font-size:12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; background:#f7f9fa;
+  }
+  .search-qr-placeholder .icon{ font-size:26px; opacity:0.7; }
+  .search-qr-placeholder.hidden{ display:none; }
+
+  .toast{
+    position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    background:var(--accent); color:#ffffff; padding:11px 18px; border-radius:10px;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 6px 18px rgba(20,30,40,0.25);
+    opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+    max-width:88%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
+
   @media (prefers-reduced-motion: reduce){
     .scan-line, .dot, .result-check, .spinner, .session-pulse, .container{ animation:none !important; }
   }
@@ -458,11 +508,15 @@
 
   <div class="grade-field">
     <label for="gradeLevel">Grade Level</label>
-    <select id="gradeLevel" onchange="setGrade(this.value)">
-      <option value="first">First Secondary</option>
-      <option value="second">Second Secondary</option>
-      <option value="third">Third Secondary</option>
-    </select>
+    <div class="grade-select-wrap">
+      <select id="gradeLevel" onchange="setGrade(this.value)">
+        <option value="first">First Secondary</option>
+        <option value="second">Second Secondary</option>
+        <option value="third">Third Secondary</option>
+      </select>
+      <div class="grade-lock-overlay" id="gradeLockOverlay" onclick="notifyGradeLocked()"></div>
+    </div>
+    <div class="grade-lock-hint" id="gradeLockHint">End the session to change grade level</div>
   </div>
 
   <div class="payment-fields" id="paymentFields">
@@ -506,6 +560,8 @@
   <div class="footer">Powered by Khodeir</div>
 </div>
 
+<div class="toast" id="toastMsg"></div>
+
 <!-- Settings modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
@@ -538,10 +594,22 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Search Student</div>
-      <button class="modal-close" onclick="closeModal('searchModal')">×</button>
+      <button class="modal-close" onclick="closeSearchModal()">×</button>
+    </div>
+    <div class="search-type-toggle" id="searchTypeToggle">
+      <button type="button" class="search-type-btn active" data-type="name" onclick="setSearchType('name')">Name</button>
+      <button type="button" class="search-type-btn" data-type="id" onclick="setSearchType('id')">Student ID</button>
+      <button type="button" class="search-type-btn" data-type="qr" onclick="setSearchType('qr')">QR Code</button>
     </div>
     <input type="text" id="searchInput" placeholder="Student name…">
-    <button class="modal-btn" onclick="runSearch()">Search</button>
+    <div class="search-qr-frame" id="searchQrFrame">
+      <div id="searchReader"></div>
+      <div class="search-qr-placeholder" id="searchQrPlaceholder">
+        <div class="icon">📷</div>
+        <div id="searchQrPlaceholderText">Starting camera…</div>
+      </div>
+    </div>
+    <button class="modal-btn" id="searchActionBtn" onclick="handleSearchAction()">Search</button>
     <div class="report-result" id="searchResult"></div>
   </div>
 </div>
@@ -573,7 +641,7 @@
     payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
-    session:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/0b362490-9d57-40e3-8f70-1d7c481a0857"
+    session:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
   };
 
   // How long a result card stays on screen before auto-resuming the camera.
@@ -605,6 +673,31 @@
   let sessionStartTime = null;
   let sessionTimerInterval = null;
 
+  // Search modal — which field the typed query is matched against.
+  let searchType = "name";
+  const SEARCH_PLACEHOLDERS = {
+    name: "Student name…",
+    id: "Student ID…",
+    qr: "Paste or type QR code…"
+  };
+  let searchScanner = null;
+  let searchScannerRunning = false;
+
+  /* ---------- Toast ---------- */
+  function showToast(message){
+    const toast = document.getElementById('toastMsg');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ toast.classList.remove('show'); }, 2400);
+  }
+
+  function notifyGradeLocked(){
+    if(sessionActive){
+      showToast('End the current session before changing the grade level');
+    }
+  }
+
   /* ---------- Settings ---------- */
   function applySettings(){
     document.documentElement.style.setProperty('--accent', settings.accentColor);
@@ -631,17 +724,29 @@
     settings.defaultGrade = document.getElementById("setDefaultGrade").value;
     settings.accentColor = document.getElementById("setAccentColor").value;
     applySettings();
-    // an explicit save should apply the chosen default grade right away
-    document.getElementById("gradeLevel").value = settings.defaultGrade;
-    currentGrade = settings.defaultGrade;
+    // Only apply the new default grade to the live selector when no session is
+    // running — otherwise this was silently overriding the locked grade mid-session.
+    if(!sessionActive){
+      document.getElementById("gradeLevel").value = settings.defaultGrade;
+      currentGrade = settings.defaultGrade;
+    }
     closeModal('settingsModal');
   }
 
   /* ---------- Modals ---------- */
   function openModal(id){ document.getElementById(id).classList.add('open'); }
   function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  function closeSearchModal(){
+    stopSearchScanner();
+    closeModal('searchModal');
+  }
   document.querySelectorAll('.modal-overlay').forEach(ov=>{
-    ov.addEventListener('click', e=>{ if(e.target === ov) ov.classList.remove('open'); });
+    ov.addEventListener('click', e=>{
+      if(e.target === ov){
+        if(ov.id === 'searchModal') stopSearchScanner();
+        ov.classList.remove('open');
+      }
+    });
   });
 
   /* ---------- Session ---------- */
@@ -693,6 +798,10 @@
     document.getElementById("scanFrame").classList.remove("session-off");
     startScanner();
 
+    document.getElementById("gradeLevel").disabled = true;
+    document.getElementById("gradeLockHint").classList.add("show");
+    document.getElementById("gradeLockOverlay").classList.add("show");
+
     // Let the backend know a session started (non-blocking — scanning works either way)
     fetch(WEBHOOKS.session, {
       method: "POST",
@@ -721,6 +830,10 @@
     document.getElementById("cooldownBadge").classList.remove("show");
     setStatus("Session ended — start a new session to resume scanning", "wait");
     renderSessionBar();
+
+    document.getElementById("gradeLevel").disabled = false;
+    document.getElementById("gradeLockHint").classList.remove("show");
+    document.getElementById("gradeLockOverlay").classList.remove("show");
 
     fetch(WEBHOOKS.session, {
       method: "POST",
@@ -763,11 +876,13 @@
   }
 
   function setGrade(grade){
-    currentGrade = grade;
     if(sessionActive){
-      const sub = document.querySelector("#sessionBar .session-sub");
-      if(sub) sub.textContent = GRADE_LABELS[currentGrade];
+      // Shouldn't normally fire since the select is disabled + overlaid, but guard anyway.
+      document.getElementById("gradeLevel").value = currentGrade;
+      notifyGradeLocked();
+      return;
     }
+    currentGrade = grade;
   }
 
   function beep(type){
@@ -1021,12 +1136,101 @@
   }
 
   /* ---------- Search ---------- */
+  function setSearchType(type){
+    const previousType = searchType;
+    searchType = type;
+    document.querySelectorAll("#searchTypeToggle .search-type-btn").forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.type === type);
+    });
+    document.getElementById("searchResult").classList.remove("show");
+
+    if(previousType === "qr" && type !== "qr"){
+      stopSearchScanner();
+    }
+
+    const input = document.getElementById("searchInput");
+    const qrFrame = document.getElementById("searchQrFrame");
+    const actionBtn = document.getElementById("searchActionBtn");
+
+    if(type === "qr"){
+      input.style.display = "none";
+      input.value = "";
+      qrFrame.classList.add("active");
+      actionBtn.textContent = "🔄 Rescan";
+      startSearchScanner();
+    } else {
+      input.style.display = "";
+      input.placeholder = SEARCH_PLACEHOLDERS[type];
+      input.value = "";
+      qrFrame.classList.remove("active");
+      actionBtn.textContent = "Search";
+    }
+  }
+
+  function handleSearchAction(){
+    if(searchType === "qr"){
+      startSearchScanner();
+    } else {
+      runSearch();
+    }
+  }
+
+  function startSearchScanner(){
+    const placeholder = document.getElementById("searchQrPlaceholder");
+    const placeholderText = document.getElementById("searchQrPlaceholderText");
+    const readerEl = document.getElementById("searchReader");
+
+    stopSearchScanner(); // make sure any previous instance is cleared first
+
+    placeholderText.textContent = "Starting camera…";
+    placeholder.classList.remove("hidden");
+    readerEl.innerHTML = "";
+
+    searchScanner = new Html5Qrcode("searchReader");
+
+    Html5Qrcode.getCameras()
+      .then(cameras => {
+        if(!cameras || !cameras.length){
+          placeholderText.textContent = "No camera found on this device";
+          return;
+        }
+        const back = cameras.find(c => /back|rear/i.test(c.label || ""));
+        const cameraId = (back || cameras[0]).id;
+
+        return searchScanner.start(
+          cameraId,
+          { fps: 10, qrbox: 220 },
+          (decodedText) => {
+            document.getElementById("searchInput").value = decodedText;
+            stopSearchScanner();
+            runSearch();
+          },
+          () => {}
+        ).then(()=>{
+          searchScannerRunning = true;
+          placeholder.classList.add("hidden");
+        });
+      })
+      .catch(()=>{
+        placeholderText.textContent = "Can't access the camera";
+      });
+  }
+
+  function stopSearchScanner(){
+    if(searchScanner && searchScannerRunning){
+      searchScannerRunning = false;
+      searchScanner.stop().then(()=>{
+        searchScanner.clear();
+      }).catch(()=>{});
+    }
+  }
+
   function runSearch(){
     const query = document.getElementById("searchInput").value.trim();
     const resultEl = document.getElementById("searchResult");
     if(!query){
       resultEl.classList.add("show");
-      resultEl.innerHTML = "Type a student name to search.";
+      resultEl.innerHTML = `Type a ${searchType === "qr" ? "QR code" : searchType === "id" ? "student ID" : "student name"} to search.`;
       return;
     }
     resultEl.classList.add("show");
@@ -1035,7 +1239,7 @@
     fetch(WEBHOOKS.search, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "search", query, grade: currentGrade })
+      body: JSON.stringify({ action: "search", search_type: searchType, query, grade: currentGrade })
     })
     .then(async response => {
       let data = {};

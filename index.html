@@ -1246,11 +1246,33 @@
       try{ data = await response.json(); }catch(e){}
       if(data.success && data.student){
         const s = data.student;
+
+        // Use percentages from the backend if provided; otherwise derive them
+        // from the attendance/absence counts.
+        let attPct = s.attendance_percentage;
+        let absPct = s.absence_percentage;
+        if((attPct == null || absPct == null) && s.attendance_count != null && s.absence_count != null){
+          const total = Number(s.attendance_count) + Number(s.absence_count);
+          if(total > 0){
+            attPct = ((Number(s.attendance_count) / total) * 100).toFixed(0);
+            absPct = ((Number(s.absence_count) / total) * 100).toFixed(0);
+          }
+        }
+
+        const isPaid = s.payment_status === "paid";
+
         resultEl.innerHTML = `
-          <b>${s.name ?? ""}</b><br>
-          Attendance: <b>${s.attendance_count ?? "–"}</b> &nbsp; Absence: <b>${s.absence_count ?? "–"}</b><br>
-          Payment: <span class="chip ${s.payment_status === 'paid' ? 'paid' : 'unpaid'}">${s.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</span><br>
-          Last Attendance: <b>${s.last_attendance ?? "–"}</b>
+          <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:8px;">${s.name ?? ""}</div>
+          <div>Student Number: <b>${s.student_number ?? "–"}</b></div>
+          <div>Parent Number: <b>${s.guardian_phone ?? s.parent_phone ?? "–"}</b></div>
+          <div class="result-divider"></div>
+          <div>Attendance Rate: <b>${attPct != null ? attPct + "%" : "–"}</b></div>
+          <div>Absence Rate: <b>${absPct != null ? absPct + "%" : "–"}</b></div>
+          <div>Times Present: <b>${s.attendance_count ?? "–"}</b></div>
+          <div>Times Absent: <b>${s.absence_count ?? "–"}</b></div>
+          <div class="result-divider"></div>
+          <div>Payment Status: <span class="chip ${isPaid ? 'paid' : 'unpaid'}">${isPaid ? 'Paid' : 'Not Paid'}</span></div>
+          <div>Last Attendance: <b>${s.last_attendance ?? "–"}</b></div>
         `;
       } else {
         resultEl.innerHTML = data.message || "No student found.";

@@ -1259,7 +1259,8 @@
           }
         }
 
-        const isPaid = s.payment_status === "paid";
+        const paymentRaw = String(s.payment_status ?? "").trim().toLowerCase();
+        const isPaid = paymentRaw === "paid" || paymentRaw === "true" || paymentRaw === "yes" || paymentRaw === "1" || s.payment_status === true;
 
         resultEl.innerHTML = `
           <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:8px;">${s.name ?? ""}</div>

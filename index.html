@@ -598,7 +598,7 @@
     </div>
     <div class="search-type-toggle" id="searchTypeToggle">
       <button type="button" class="search-type-btn active" data-type="name" onclick="setSearchType('name')">Name</button>
-      <button type="button" class="search-type-btn" data-type="id" onclick="setSearchType('id')">Student ID</button>
+      <button type="button" class="search-type-btn" data-type="id" onclick="setSearchType('id')">Student Number</button>
       <button type="button" class="search-type-btn" data-type="qr" onclick="setSearchType('qr')">QR Code</button>
     </div>
     <input type="text" id="searchInput" placeholder="Student name…">
@@ -677,7 +677,7 @@
   let searchType = "name";
   const SEARCH_PLACEHOLDERS = {
     name: "Student name…",
-    id: "Student ID…",
+    id: "Student Number…",
     qr: "Paste or type QR code…"
   };
   let searchScanner = null;
@@ -1230,7 +1230,7 @@
     const resultEl = document.getElementById("searchResult");
     if(!query){
       resultEl.classList.add("show");
-      resultEl.innerHTML = `Type a ${searchType === "qr" ? "QR code" : searchType === "id" ? "student ID" : "student name"} to search.`;
+      resultEl.innerHTML = `Type a ${searchType === "qr" ? "QR code" : searchType === "id" ? "student number" : "student name"} to search.`;
       return;
     }
     resultEl.classList.add("show");

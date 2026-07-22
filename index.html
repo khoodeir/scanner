@@ -35,10 +35,20 @@
     background:#ffffff;
     border:1px solid var(--glass-border);
     border-radius:20px;
-    padding:32px 28px;
+    padding:36px 28px 32px;
     text-align:center;
     position:relative;
-    box-shadow:0 2px 14px rgba(28,61,90,0.08);
+    overflow:hidden;
+    box-shadow:0 2px 18px rgba(28,61,90,0.1);
+    animation:containerIn .4s ease;
+  }
+  @keyframes containerIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .container::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--accent), var(--gold));
   }
 
   /* Top bar (settings) */
@@ -68,6 +78,42 @@
     font-size:14px; font-weight:500; color:#5c7185;
     margin-bottom:8px; min-height:18px;
   }
+
+  /* Session bar */
+  .session-bar{ margin-top:18px; margin-bottom:8px; }
+  .start-session-btn{
+    width:100%; padding:14px; border:none; border-radius:14px; cursor:pointer;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    color:#ffffff; display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 4px 14px rgba(28,61,90,0.25); transition:all .2s ease;
+  }
+  .start-session-btn:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(28,61,90,0.32); }
+  .start-session-btn:active{ transform:translateY(0); }
+
+  .session-active-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 14px; border-radius:14px;
+    background:rgba(46,125,82,0.08); border:1px solid rgba(46,125,82,0.3);
+  }
+  .session-info{ display:flex; align-items:center; gap:10px; text-align:left; min-width:0; }
+  .session-pulse{
+    width:9px; height:9px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 8px var(--success); animation:pulse 1.6s infinite; flex-shrink:0;
+  }
+  .session-text{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .session-label{ font-size:12px; font-weight:700; color:var(--success); }
+  .session-sub{ font-size:11px; color:#5c7185; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .session-timer{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;
+    color:var(--accent); letter-spacing:0.02em; min-width:48px; text-align:center; flex-shrink:0;
+  }
+  .end-session-btn{
+    border:1px solid rgba(163,52,42,0.3); background:rgba(163,52,42,0.08); color:var(--error);
+    padding:8px 12px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;
+    font-family:'Inter',sans-serif; transition:all .2s ease;
+  }
+  .end-session-btn:hover{ background:rgba(163,52,42,0.15); }
 
   /* Toolbar (search / reports) */
   .toolbar{
@@ -156,7 +202,7 @@
     position:relative; border-radius:16px; overflow:hidden;
     border:1px solid var(--glass-border);
     background:#000;
-    transition:opacity .2s ease;
+    transition:opacity .2s ease, background .2s ease;
   }
   .scan-frame.hidden{ display:none; }
   #reader{ width:100%; }
@@ -178,6 +224,18 @@
     100%{ top:92%; }
   }
   .scan-frame.locked .scan-line{ display:none; }
+
+  /* Pre-session placeholder inside the scanner frame */
+  .scan-frame.session-off{ background:#f7f9fa; }
+  .scan-frame.session-off .corner,
+  .scan-frame.session-off .scan-line,
+  .scan-frame.session-off #reader{ display:none; }
+  .scan-placeholder{
+    display:none; padding:52px 20px; text-align:center; color:#8a97a5; font-size:13px;
+    flex-direction:column; align-items:center; gap:10px;
+  }
+  .scan-frame.session-off .scan-placeholder{ display:flex; }
+  .scan-placeholder .icon{ font-size:30px; opacity:0.7; }
 
   /* Cooldown badge over scanner */
   .cooldown-badge{
@@ -209,6 +267,11 @@
   .error{ color:var(--error); border-color:rgba(163,52,42,0.35) !important; background:rgba(163,52,42,0.08) !important; }
   .error .dot{ background:var(--error); box-shadow:0 0 8px var(--error); }
   .wait{ color:#8a6a1f; }
+
+  @keyframes pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
 
   #status.detailed{
     display:block; width:100%; text-align:left; border-radius:16px;
@@ -360,7 +423,7 @@
   .report-result.show{ display:block; }
 
   @media (prefers-reduced-motion: reduce){
-    .scan-line, .dot, .result-check, .spinner{ animation:none !important; }
+    .scan-line, .dot, .result-check, .spinner, .session-pulse, .container{ animation:none !important; }
   }
 </style>
 </head>
@@ -372,6 +435,12 @@
   <div class="eyebrow">Live scanner</div>
   <h1>Student Attendance System</h1>
   <h2 id="centerNameDisplay"></h2>
+
+  <div class="session-bar" id="sessionBar">
+    <button type="button" class="start-session-btn" id="startSessionBtn" onclick="startSession()">
+      ▶️ Start Session
+    </button>
+  </div>
 
   <div class="toolbar">
     <button type="button" class="tool-btn" onclick="openModal('searchModal')">🔍 Search Student</button>
@@ -408,7 +477,7 @@
   </div>
   <div class="hint" id="paymentHint"></div>
 
-  <div class="scan-frame" id="scanFrame">
+  <div class="scan-frame session-off" id="scanFrame">
     <div class="cooldown-badge" id="cooldownBadge">⏳ Wait <span id="cooldownSeconds">5</span>s</div>
     <div class="corner tl"></div>
     <div class="corner tr"></div>
@@ -416,11 +485,15 @@
     <div class="corner br"></div>
     <div class="scan-line"></div>
     <div id="reader"></div>
+    <div class="scan-placeholder" id="scanPlaceholder">
+      <div class="icon">📷</div>
+      <div>Start the session to activate the camera</div>
+    </div>
   </div>
 
   <div id="status" class="wait">
     <span class="dot"></span>
-    <span id="status-text">Waiting for QR code…</span>
+    <span id="status-text">Start the session to begin scanning</span>
   </div>
 
   <div class="history">
@@ -499,7 +572,8 @@
     attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
-    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
+    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
+    session:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
   };
 
   // How long a result card stays on screen before auto-resuming the camera.
@@ -525,6 +599,11 @@
   const COOLDOWN_MS = 5000;
   let history = [];
   const HISTORY_LIMIT = 8;
+
+  // Session state — scanning is gated behind an active session.
+  let sessionActive = false;
+  let sessionStartTime = null;
+  let sessionTimerInterval = null;
 
   /* ---------- Settings ---------- */
   function applySettings(){
@@ -565,6 +644,99 @@
     ov.addEventListener('click', e=>{ if(e.target === ov) ov.classList.remove('open'); });
   });
 
+  /* ---------- Session ---------- */
+  function formatElapsed(ms){
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const s = String(totalSec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function renderSessionBar(){
+    const bar = document.getElementById("sessionBar");
+    if(sessionActive){
+      bar.innerHTML = `
+        <div class="session-active-card">
+          <div class="session-info">
+            <span class="session-pulse"></span>
+            <div class="session-text">
+              <span class="session-label">Session Active</span>
+              <span class="session-sub">${GRADE_LABELS[currentGrade]}</span>
+            </div>
+          </div>
+          <span class="session-timer" id="sessionTimer">00:00</span>
+          <button type="button" class="end-session-btn" onclick="endSession()">End Session</button>
+        </div>`;
+    } else {
+      bar.innerHTML = `
+        <button type="button" class="start-session-btn" id="startSessionBtn" onclick="startSession()">
+          ▶️ Start Session
+        </button>`;
+    }
+  }
+
+  function tickSessionTimer(){
+    const el = document.getElementById("sessionTimer");
+    if(!el || !sessionStartTime) return;
+    el.textContent = formatElapsed(Date.now() - sessionStartTime);
+  }
+
+  function startSession(){
+    if(sessionActive) return;
+    sessionActive = true;
+    sessionStartTime = Date.now();
+    renderSessionBar();
+    tickSessionTimer();
+    if(sessionTimerInterval) clearInterval(sessionTimerInterval);
+    sessionTimerInterval = setInterval(tickSessionTimer, 1000);
+
+    document.getElementById("scanFrame").classList.remove("session-off");
+    startScanner();
+
+    // Let the backend know a session started (non-blocking — scanning works either way)
+    fetch(WEBHOOKS.session, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "session_start",
+        grade: currentGrade,
+        grade_label: GRADE_LABELS[currentGrade],
+        mode: currentMode,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(()=>{});
+  }
+
+  function endSession(){
+    if(!sessionActive) return;
+    sessionActive = false;
+    if(sessionTimerInterval){ clearInterval(sessionTimerInterval); sessionTimerInterval = null; }
+    if(resumeTimer){ clearTimeout(resumeTimer); resumeTimer = null; }
+
+    stopScanner();
+    sending = false;
+    const frame = document.getElementById("scanFrame");
+    frame.classList.add("session-off");
+    document.getElementById("reader").innerHTML = "";
+    document.getElementById("cooldownBadge").classList.remove("show");
+    setStatus("Session ended — start a new session to resume scanning", "wait");
+    renderSessionBar();
+
+    fetch(WEBHOOKS.session, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "session_end",
+        grade: currentGrade,
+        grade_label: GRADE_LABELS[currentGrade],
+        mode: currentMode,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(()=>{});
+
+    sessionStartTime = null;
+  }
+
   /* ---------- Mode ---------- */
   function setMode(mode){
     currentMode = mode;
@@ -586,12 +758,16 @@
     }
 
     if(!sending){
-      setStatus("Waiting for QR code…", "wait");
+      setStatus(sessionActive ? "Waiting for QR code…" : "Start the session to begin scanning", "wait");
     }
   }
 
   function setGrade(grade){
     currentGrade = grade;
+    if(sessionActive){
+      const sub = document.querySelector("#sessionBar .session-sub");
+      if(sub) sub.textContent = GRADE_LABELS[currentGrade];
+    }
   }
 
   function beep(type){
@@ -738,12 +914,13 @@
   // Manual "scan next" — also used by the auto-resume timer.
   function scanNext(){
     if(resumeTimer){ clearTimeout(resumeTimer); resumeTimer = null; }
+    if(!sessionActive) return;
     startScanner();
   }
 
   /* ---------- Scanning ---------- */
   function onScanSuccess(decodedText){
-    if(sending) return;
+    if(sending || !sessionActive) return;
 
     const cooldownRemaining = isOnCooldown(decodedText);
     if(cooldownRemaining > 0){
@@ -829,6 +1006,7 @@
   }
 
   function startScanner(){
+    if(!sessionActive) return;
     sending = false;
     document.getElementById("paymentHint").textContent = "";
     setStatus("Waiting for QR code…", "wait");
@@ -921,7 +1099,7 @@
   }
 
   applySettings();
-  startScanner();
+  renderSessionBar();
 </script>
 </body>
 </html>

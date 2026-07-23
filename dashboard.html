@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EduTrack — لوحة المتابعة</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -564,11 +564,13 @@
   }
 
   function destroyChart(key){ if(charts[key]){ charts[key].destroy(); charts[key] = null; } }
+  const chartLibReady = () => typeof Chart !== "undefined";
 
   function renderAttendanceByGradeChart(students){
     const canvas = document.getElementById("attendanceByGradeChart");
     const emptyEl = document.getElementById("attChartEmpty");
     destroyChart("att");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
 
     const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
     const rows = gradesShown.map(g => {
@@ -605,6 +607,7 @@
     const canvas = document.getElementById("paymentStatusChart");
     const emptyEl = document.getElementById("payChartEmpty");
     destroyChart("pay");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
 
     if(paidCount + unpaidCount === 0){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
     canvas.style.display = "block"; emptyEl.classList.remove("show");
@@ -630,6 +633,7 @@
     const canvas = document.getElementById("revenueChart");
     const emptyEl = document.getElementById("revChartEmpty");
     destroyChart("rev");
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
     const col = SCHEMA.col;
 
     let rows = combined.statsRows || [];

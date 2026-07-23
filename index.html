@@ -6,6 +6,7 @@
 <title>Student Attendance Scanner</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -779,12 +780,44 @@
 <script>
   // Webhooks — one per workflow. Point these at your real n8n endpoints.
   // Expected JSON response shapes are documented next to each call below.
+  // NOTE: the Analytics dashboard no longer uses WEBHOOKS.report — it reads
+  // straight from Supabase (see the Supabase section below). The other
+  // actions (attendance, payment, search, exports) are unchanged.
   const WEBHOOKS = {
     attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment",
     session:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/attendance&payment"
+  };
+
+  /* ============================================================
+     SUPABASE — Analytics Dashboard data source
+     ============================================================ */
+  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // If your table/column names are different, change ONLY the values on
+  // the right-hand side here — nothing else in the file needs to change.
+  const SCHEMA = {
+    students: "students",
+    attendance: "attendance",
+    payments: "payments",
+    col: {
+      studentId: "id",
+      studentName: "name",
+      studentGrade: "grade",
+      studentNumber: "student_number",
+      attStudentId: "student_id",
+      attGrade: "grade",
+      attDate: "attended_at",
+      payStudentId: "student_id",
+      payGrade: "grade",
+      payAmount: "amount",
+      payDate: "paid_at",
+      payMonth: "month"
+    }
   };
 
   // How long a result card stays on screen before auto-resuming the camera.
@@ -1494,37 +1527,125 @@
     return `<span class="stat-delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${up ? '+' : ''}${num}%</span>`;
   }
 
-  function loadDashboard(){
+  async function loadDashboard(){
     document.getElementById('dashLoading').style.display = 'flex';
     document.getElementById('dashError').classList.remove('show');
     document.getElementById('dashContent').classList.remove('show');
 
-    fetch(WEBHOOKS.report, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "dashboard", grade: dashboardGrade })
-    })
-    .then(async response => {
-      let data = {};
-      try{ data = await response.json(); }catch(e){}
-      document.getElementById('dashLoading').style.display = 'none';
+    try{
+      const grade = dashboardGrade;
+      const col = SCHEMA.col;
 
-      if(!data.success){
-        const err = document.getElementById('dashError');
-        err.textContent = data.message || "Couldn't load the dashboard.";
-        err.classList.add('show');
-        return;
+      // Students in this grade
+      const { data: students, error: studentsErr } = await supabaseClient
+        .from(SCHEMA.students)
+        .select('*')
+        .eq(col.studentGrade, grade);
+      if(studentsErr) throw studentsErr;
+
+      const studentsCount = students.length;
+
+      // Every attendance record for this grade (used for the 7-day chart,
+      // the top-students list, and the overall attendance rate)
+      const { data: allAttendance, error: attErr } = await supabaseClient
+        .from(SCHEMA.attendance)
+        .select(`${col.attStudentId}, ${col.attDate}`)
+        .eq(col.attGrade, grade);
+      if(attErr) throw attErr;
+
+      // Every payment record for this grade (used for the 30-day chart,
+      // this month's revenue, and who hasn't paid yet)
+      const { data: allPayments, error: payErr } = await supabaseClient
+        .from(SCHEMA.payments)
+        .select(`${col.payStudentId}, ${col.payAmount}, ${col.payDate}, ${col.payMonth}`)
+        .eq(col.payGrade, grade);
+      if(payErr) throw payErr;
+
+      // ---- Attendance, last 7 days ----
+      const days7 = [];
+      for(let i = 6; i >= 0; i--){
+        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+        days7.push(d);
       }
+      const attendanceSeries = days7.map(d => {
+        const next = new Date(d); next.setDate(next.getDate() + 1);
+        const count = allAttendance.filter(a => {
+          const t = new Date(a[col.attDate]);
+          return t >= d && t < next;
+        }).length;
+        return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: count };
+      });
 
-      renderDashboard(data.data || data);
-      document.getElementById('dashContent').classList.add('show');
-    })
-    .catch(()=>{
+      // ---- Revenue, last 30 days ----
+      const days30 = [];
+      for(let i = 29; i >= 0; i--){
+        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+        days30.push(d);
+      }
+      const revenueSeries = days30.map(d => {
+        const next = new Date(d); next.setDate(next.getDate() + 1);
+        const sum = allPayments.filter(p => {
+          const t = new Date(p[col.payDate]);
+          return t >= d && t < next;
+        }).reduce((acc, p) => acc + Number(p[col.payAmount] || 0), 0);
+        return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: sum };
+      });
+
+      // ---- Top students by total attendance count ----
+      const attCountByStudent = {};
+      allAttendance.forEach(a => {
+        const id = a[col.attStudentId];
+        attCountByStudent[id] = (attCountByStudent[id] || 0) + 1;
+      });
+      const maxAttendance = Math.max(1, ...Object.values(attCountByStudent), 0);
+      const topStudents = students
+        .map(s => ({ name: s[col.studentName], count: attCountByStudent[s[col.studentId]] || 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+        .map(s => ({ name: s.name, percentage: Math.round((s.count / maxAttendance) * 100) }));
+
+      // ---- Overall attendance rate: records / (students × distinct session days) ----
+      const sessionDays = new Set(allAttendance.map(a => new Date(a[col.attDate]).toDateString())).size || 1;
+      const attendanceRate = studentsCount > 0
+        ? Math.round((allAttendance.length / (studentsCount * sessionDays)) * 100)
+        : 0;
+
+      // ---- This month: who paid, who didn't, and total revenue ----
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const paidIdsThisMonth = new Set(
+        allPayments.filter(p => p[col.payMonth] === currentMonth).map(p => p[col.payStudentId])
+      );
+      const unpaidStudents = students
+        .filter(s => !paidIdsThisMonth.has(s[col.studentId]))
+        .map(s => s[col.studentName]);
+      const collectionRate = studentsCount > 0
+        ? Math.round((paidIdsThisMonth.size / studentsCount) * 100)
+        : 0;
+      const revenue = allPayments
+        .filter(p => p[col.payMonth] === currentMonth)
+        .reduce((acc, p) => acc + Number(p[col.payAmount] || 0), 0);
+
       document.getElementById('dashLoading').style.display = 'none';
-      const err = document.getElementById('dashError');
-      err.textContent = "Can't connect to n8n.";
-      err.classList.add('show');
-    });
+      renderDashboard({
+        students_count: studentsCount,
+        attendance_rate: attendanceRate,
+        revenue: revenue,
+        collection_rate: collectionRate,
+        attendance_last_7_days: attendanceSeries,
+        revenue_last_30_days: revenueSeries,
+        top_students: topStudents,
+        unpaid_students: unpaidStudents
+      });
+      document.getElementById('dashContent').classList.add('show');
+
+    }catch(err){
+      console.error(err);
+      document.getElementById('dashLoading').style.display = 'none';
+      const errEl = document.getElementById('dashError');
+      errEl.textContent = "Can't load the dashboard from Supabase. Check that the table/column names in SCHEMA match your database, and that Row Level Security allows anonymous SELECT on students, attendance and payments.";
+      errEl.classList.add('show');
+    }
   }
 
   function renderDashboard(d){

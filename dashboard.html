@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduTrack — لوحة المتابعة</title>
+<title>EduTrack — Live Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ink:#152a45;
@@ -27,41 +27,43 @@
   *{ margin:0; padding:0; box-sizing:border-box; }
   html,body{ height:100%; }
   body{
-    font-family:'Tajawal',sans-serif;
+    font-family:'Inter',sans-serif;
     background:
-      radial-gradient(1100px 500px at 85% -10%, rgba(184,137,43,0.08), transparent 60%),
+      radial-gradient(1100px 500px at 88% -10%, rgba(184,137,43,0.09), transparent 60%),
+      radial-gradient(700px 400px at 5% 0%, rgba(21,42,69,0.05), transparent 55%),
       var(--paper);
     color:var(--ink);
     min-height:100vh;
-    padding:28px 22px 60px;
+    padding:30px 24px 64px;
   }
   .num{ font-family:'Space Grotesk',sans-serif; }
+  .serif{ font-family:'Fraunces',serif; }
 
   /* ===== Header ===== */
   .topbar{
-    max-width:1180px; margin:0 auto 22px;
+    max-width:1180px; margin:0 auto 24px;
     display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
   }
-  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:13px; }
   .brand-mark{
-    width:44px; height:44px; border-radius:12px;
+    width:46px; height:46px; border-radius:12px;
     background:linear-gradient(135deg, var(--ink), var(--ink-2));
-    color:#f5efe0; display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;
+    color:#f2ecd9; display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:600; font-size:16px;
     box-shadow:0 6px 16px rgba(21,42,69,0.28);
   }
-  .brand h1{ font-size:19px; font-weight:900; color:var(--ink); }
-  .brand p{ font-size:12px; color:var(--muted); margin-top:1px; }
-  .top-actions{ display:flex; align-items:center; gap:10px; }
+  .brand h1{ font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--ink); letter-spacing:-0.01em; }
+  .brand p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .top-actions{ display:flex; align-items:center; gap:12px; }
   .updated-note{ font-size:11.5px; color:var(--muted); }
   .refresh-btn{
-    display:flex; align-items:center; gap:7px;
-    padding:10px 16px; border-radius:10px; border:1px solid var(--line);
-    background:var(--card); color:var(--ink); font-family:'Tajawal',sans-serif;
-    font-weight:700; font-size:13px; cursor:pointer; transition:all .15s ease;
+    display:flex; align-items:center; gap:8px;
+    padding:10px 18px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-family:'Inter',sans-serif;
+    font-weight:600; font-size:13px; cursor:pointer; transition:all .15s ease;
     box-shadow:0 1px 2px rgba(21,42,69,0.05);
   }
-  .refresh-btn:hover{ border-color:var(--gold); color:var(--gold); transform:translateY(-1px); }
+  .refresh-btn:hover{ border-color:var(--gold); color:var(--gold); transform:translateY(-1px); box-shadow:0 4px 10px rgba(21,42,69,0.08); }
   .refresh-btn .spin{ display:inline-block; }
   .refresh-btn.loading .spin{ animation:spin .8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
@@ -72,8 +74,8 @@
   .tab-row{ display:flex; align-items:flex-end; margin-bottom:0; padding-inline-start:6px; }
   .tab{
     position:relative; cursor:pointer; user-select:none;
-    padding:11px 22px 13px; margin-inline-end:-10px;
-    background:#ece7d9; color:var(--muted); font-weight:700; font-size:13.5px;
+    padding:12px 24px 14px; margin-inline-end:-10px;
+    background:#ece7d9; color:var(--muted); font-weight:600; font-size:13.5px;
     border-radius:12px 12px 0 0; border:1px solid var(--line); border-bottom:none;
     transition:all .18s ease; z-index:1;
   }
@@ -88,15 +90,15 @@
   }
   .tab-panel{
     background:var(--card); border:1px solid var(--line); border-radius:0 14px 14px 14px;
-    padding:26px; box-shadow:0 4px 22px rgba(21,42,69,0.06); position:relative; z-index:4;
+    padding:28px; box-shadow:0 10px 30px rgba(21,42,69,0.07); position:relative; z-index:4;
   }
 
   .state-msg{
     display:none; align-items:center; justify-content:center; gap:10px;
-    padding:60px 10px; color:var(--muted); font-size:13.5px; text-align:center;
+    padding:64px 10px; color:var(--muted); font-size:13.5px; text-align:center;
   }
   .state-msg.show{ display:flex; }
-  .state-msg.err{ color:var(--error); flex-direction:column; gap:8px; }
+  .state-msg.err{ color:var(--error); flex-direction:column; gap:9px; }
   .state-msg .spinner{
     width:18px; height:18px; border-radius:50%; border:2px solid rgba(21,42,69,0.15);
     border-top-color:var(--gold); animation:spin .7s linear infinite; flex-shrink:0;
@@ -105,16 +107,16 @@
   .content.show{ display:block; }
 
   /* ===== KPI cards ===== */
-  .kpi-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; }
+  .kpi-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:26px; }
   .kpi-card{
     background:var(--paper); border:1px solid var(--line); border-radius:14px;
-    padding:16px 16px 14px; position:relative; overflow:hidden;
+    padding:17px 17px 15px; position:relative; overflow:hidden;
   }
-  .kpi-label{ font-size:11px; color:var(--muted); font-weight:700; letter-spacing:.01em; margin-bottom:8px; }
-  .kpi-value{ font-size:24px; font-weight:700; color:var(--ink); line-height:1; }
-  .kpi-sub{ font-size:11px; color:var(--muted); margin-top:7px; }
+  .kpi-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:9px; }
+  .kpi-value{ font-size:25px; font-weight:700; color:var(--ink); line-height:1; }
+  .kpi-sub{ font-size:11px; color:var(--muted); margin-top:8px; line-height:1.4; }
   .kpi-card.seal{
-    display:flex; align-items:center; gap:12px; justify-content:flex-start;
+    display:flex; align-items:center; gap:13px; justify-content:flex-start;
   }
   .seal-ring{ position:relative; width:58px; height:58px; flex-shrink:0; }
   .seal-ring svg{ transform:rotate(-90deg); }
@@ -127,17 +129,17 @@
 
   /* ===== Section headers ===== */
   .section-title{
-    display:flex; align-items:center; gap:8px;
-    font-weight:700; font-size:14.5px; color:var(--ink); margin-bottom:12px;
+    display:flex; align-items:center; gap:9px;
+    font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--ink); margin-bottom:14px;
   }
   .section-title .tag{
-    font-size:10.5px; font-weight:700; color:var(--gold); background:var(--gold-soft);
-    padding:3px 8px; border-radius:999px;
+    font-family:'Inter',sans-serif; font-size:10px; font-weight:700; color:var(--gold); background:var(--gold-soft);
+    padding:3px 9px; border-radius:999px; letter-spacing:.03em; text-transform:uppercase;
   }
 
-  .two-col{ display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-bottom:24px; }
+  .two-col{ display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-bottom:26px; }
   .chart-card{
-    background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px;
+    background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:18px;
   }
   .chart-box{ position:relative; height:220px; }
   .chart-empty{
@@ -147,8 +149,8 @@
   .chart-empty.show{ display:flex; }
 
   /* ===== Lists ===== */
-  .list-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
-  .list-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .list-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:26px; }
+  .list-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:18px; }
   .list-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:10px 4px; border-bottom:1px solid var(--line); font-size:13px;
@@ -163,49 +165,47 @@
   .rank{
     display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
     border-radius:6px; font-size:10.5px; font-weight:700; background:var(--gold-soft); color:var(--gold);
-    flex-shrink:0;
+    flex-shrink:0; font-family:'Space Grotesk',sans-serif;
   }
   .val{ font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--ink); flex-shrink:0; }
   .phone-link{
-    font-size:11px; color:var(--muted); text-decoration:none; direction:ltr; display:inline-block;
+    font-size:11px; color:var(--muted); text-decoration:none; display:inline-block;
   }
   .phone-link:hover{ color:var(--gold); }
   .empty-note{ text-align:center; color:var(--muted); font-size:12.5px; padding:20px 0; }
 
   /* ===== Roster table ===== */
-  .roster-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
-  .search-box{
-    flex:1; min-width:200px; position:relative;
-  }
+  .roster-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .search-box{ flex:1; min-width:220px; position:relative; }
   .search-box input{
     width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--line);
-    background:var(--card); font-family:'Tajawal',sans-serif; font-size:13px; outline:none; color:var(--ink);
+    background:var(--card); font-family:'Inter',sans-serif; font-size:13px; outline:none; color:var(--ink);
   }
   .search-box input:focus{ border-color:var(--gold); }
   .pay-filter{ display:flex; gap:6px; }
   .pay-filter button{
-    padding:9px 13px; border-radius:9px; border:1px solid var(--line); background:var(--card);
-    color:var(--muted); font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; cursor:pointer;
+    padding:9px 14px; border-radius:9px; border:1px solid var(--line); background:var(--card);
+    color:var(--muted); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer;
   }
   .pay-filter button.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
 
   .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
-  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:680px; }
   thead th{
-    text-align:right; padding:11px 12px; background:var(--paper); color:var(--muted);
-    font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.03em;
+    text-align:left; padding:12px 14px; background:var(--paper); color:var(--muted);
+    font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
     border-bottom:1px solid var(--line); white-space:nowrap;
   }
-  tbody td{ padding:10px 12px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody td{ padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
   tbody tr:last-child td{ border-bottom:none; }
   tbody tr:hover{ background:rgba(184,137,43,0.05); }
   .chip{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
   .chip.paid{ background:var(--success-soft); color:var(--success); }
   .chip.unpaid{ background:var(--error-soft); color:var(--error); }
-  .bar-track{ width:70px; height:6px; border-radius:4px; background:rgba(21,42,69,0.08); display:inline-block; vertical-align:middle; margin-inline-end:6px; }
+  .bar-track{ width:70px; height:6px; border-radius:4px; background:rgba(21,42,69,0.08); display:inline-block; vertical-align:middle; margin-right:7px; }
   .bar-fill{ height:100%; border-radius:4px; background:var(--gold); }
 
-  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:26px; }
+  .footer-note{ text-align:center; font-size:11.5px; color:var(--muted); margin-top:28px; }
 
   @media (max-width:900px){
     .kpi-grid{ grid-template-columns:repeat(2,1fr); }
@@ -222,29 +222,29 @@
   <div class="brand">
     <div class="brand-mark">ET</div>
     <div>
-      <h1>EduTrack — لوحة المتابعة</h1>
-      <p>حضور وتحصيل مباشر من قاعدة البيانات</p>
+      <h1>EduTrack</h1>
+      <p>Live attendance & payment insights</p>
     </div>
   </div>
   <div class="top-actions">
     <span class="updated-note" id="updatedNote"></span>
     <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">
-      <span class="spin">↻</span> تحديث البيانات
+      <span class="spin">↻</span> Refresh data
     </button>
   </div>
 </div>
 
 <div class="wrap">
   <div class="tab-row" id="gradeTabs">
-    <div class="tab active" data-grade="all">كل الصفوف</div>
-    <div class="tab" data-grade="first">الصف الأول الثانوي</div>
-    <div class="tab" data-grade="second">الصف الثاني الثانوي</div>
-    <div class="tab" data-grade="third">الصف الثالث الثانوي</div>
+    <div class="tab active" data-grade="all">All Grades</div>
+    <div class="tab" data-grade="first">First Secondary</div>
+    <div class="tab" data-grade="second">Second Secondary</div>
+    <div class="tab" data-grade="third">Third Secondary</div>
   </div>
 
   <div class="tab-panel">
     <div class="state-msg show" id="loadingMsg">
-      <span class="spinner"></span> جاري تحميل البيانات من Supabase…
+      <span class="spinner"></span> Loading data from Supabase…
     </div>
     <div class="state-msg err" id="errorMsg"></div>
 
@@ -252,22 +252,22 @@
 
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">إجمالي الطلاب</div>
+          <div class="kpi-label">Total Students</div>
           <div class="kpi-value num" id="kpiStudents">–</div>
           <div class="kpi-sub" id="kpiStudentsSub"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">نسبة الحضور</div>
+          <div class="kpi-label">Attendance Rate</div>
           <div class="kpi-value num" id="kpiAttendance">–</div>
           <div class="kpi-sub" id="kpiAttendanceSub"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">إجمالي المحصّل</div>
+          <div class="kpi-label">Total Collected</div>
           <div class="kpi-value num" id="kpiRevenue">–</div>
           <div class="kpi-sub" id="kpiRevenueSub"></div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">لم يسددوا</div>
+          <div class="kpi-label">Unpaid</div>
           <div class="kpi-value num" id="kpiUnpaid">–</div>
           <div class="kpi-sub" id="kpiUnpaidSub"></div>
         </div>
@@ -281,44 +281,44 @@
             <div class="seal-pct" id="collectionPctText">–</div>
           </div>
           <div>
-            <div class="kpi-label">نسبة التحصيل</div>
-            <div class="kpi-sub" id="kpiCollectionSub" style="margin-top:4px;">من إجمالي المطلوب دفعه</div>
+            <div class="kpi-label">Collection Rate</div>
+            <div class="kpi-sub" id="kpiCollectionSub" style="margin-top:4px;">of amounts due</div>
           </div>
         </div>
       </div>
 
       <div class="two-col">
         <div class="chart-card">
-          <div class="section-title">نسبة الحضور حسب الصف <span class="tag">Live</span></div>
+          <div class="section-title">Attendance Rate by Grade <span class="tag">Live</span></div>
           <div class="chart-box">
             <canvas id="attendanceByGradeChart"></canvas>
-            <div class="chart-empty" id="attChartEmpty">لا توجد بيانات حضور بعد</div>
+            <div class="chart-empty" id="attChartEmpty">No attendance data yet</div>
           </div>
         </div>
         <div class="chart-card">
-          <div class="section-title">حالة السداد</div>
+          <div class="section-title">Payment Status</div>
           <div class="chart-box">
             <canvas id="paymentStatusChart"></canvas>
-            <div class="chart-empty" id="payChartEmpty">لا توجد بيانات سداد بعد</div>
+            <div class="chart-empty" id="payChartEmpty">No payment data yet</div>
           </div>
         </div>
       </div>
 
-      <div class="chart-card" style="margin-bottom:24px;">
-        <div class="section-title">الإيراد الشهري <span class="tag" id="revenueSourceTag">monthly_statistics</span></div>
+      <div class="chart-card" style="margin-bottom:26px;">
+        <div class="section-title">Monthly Revenue <span class="tag" id="revenueSourceTag">monthly_statistics</span></div>
         <div class="chart-box" style="height:190px;">
           <canvas id="revenueChart"></canvas>
-          <div class="chart-empty" id="revChartEmpty">لا توجد بيانات إيراد شهري مسجلة بعد</div>
+          <div class="chart-empty" id="revChartEmpty">No monthly revenue recorded yet</div>
         </div>
       </div>
 
       <div class="list-grid">
         <div class="list-card">
-          <div class="section-title">🏆 الأعلى حضورًا</div>
+          <div class="section-title">Top Attendance</div>
           <div id="topAttendersList"></div>
         </div>
         <div class="list-card">
-          <div class="section-title">📵 لم يسددوا الرسوم</div>
+          <div class="section-title">Unpaid Students</div>
           <div id="unpaidList"></div>
         </div>
       </div>
@@ -326,26 +326,26 @@
       <div class="chart-card">
         <div class="roster-head">
           <div class="search-box">
-            <input type="text" id="rosterSearch" placeholder="ابحث بالاسم أو رقم الهاتف أو كود QR…" oninput="renderRoster()">
+            <input type="text" id="rosterSearch" placeholder="Search by name, phone, or QR code…" oninput="renderRoster()">
           </div>
           <div class="pay-filter" id="payFilter">
-            <button class="active" data-f="all" onclick="setPayFilter('all')">الكل</button>
-            <button data-f="paid" onclick="setPayFilter('paid')">مسدد</button>
-            <button data-f="unpaid" onclick="setPayFilter('unpaid')">غير مسدد</button>
+            <button class="active" data-f="all" onclick="setPayFilter('all')">All</button>
+            <button data-f="paid" onclick="setPayFilter('paid')">Paid</button>
+            <button data-f="unpaid" onclick="setPayFilter('unpaid')">Unpaid</button>
           </div>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>الاسم</th>
-                <th>الصف</th>
-                <th>الحضور</th>
-                <th>الغياب</th>
-                <th>نسبة الحضور</th>
-                <th>هاتف ولي الأمر</th>
-                <th>السداد</th>
-                <th>آخر حضور</th>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Attendance Rate</th>
+                <th>Parent Phone</th>
+                <th>Payment</th>
+                <th>Last Attendance</th>
               </tr>
             </thead>
             <tbody id="rosterBody"></tbody>
@@ -356,7 +356,7 @@
     </div>
   </div>
 
-  <div class="footer-note">تُقرأ البيانات مباشرة من Supabase عبر مفتاح anon للقراءة فقط</div>
+  <div class="footer-note">Data is read live from Supabase using a read-only anon key</div>
 </div>
 
 <script>
@@ -390,7 +390,7 @@
     }
   };
 
-  const GRADE_LABELS = { first: "الصف الأول", second: "الصف الثاني", third: "الصف الثالث" };
+  const GRADE_LABELS = { first: "First Secondary", second: "Second Secondary", third: "Third Secondary" };
   const GRADES = ["first", "second", "third"];
 
   let currentGrade = "all";
@@ -417,14 +417,14 @@
   /* ---------- Helpers ---------- */
   function isPaid(status){
     const s = String(status ?? "").trim().toLowerCase();
-    return s === "paid" || s === "true" || s === "yes" || s === "مدفوع" || s === "1";
+    return s === "paid" || s === "true" || s === "yes" || s === "1";
   }
   function pct(att, abs){
     const a = Number(att) || 0, b = Number(abs) || 0;
     const total = a + b;
     return total > 0 ? Math.round((a / total) * 100) : null;
   }
-  function fmtEGP(n){ return `${Number(n || 0).toLocaleString('en-US')} ج.م`; }
+  function fmtEGP(n){ return `EGP ${Number(n || 0).toLocaleString('en-US')}`; }
 
   /* ---------- Fetch + merge one grade ---------- */
   async function fetchGrade(grade){
@@ -460,8 +460,7 @@
 
   async function fetchStats(){
     try{
-      let q = supa.from(SCHEMA.statsTable).select("*");
-      const { data, error } = await q;
+      const { data, error } = await supa.from(SCHEMA.statsTable).select("*");
       if(error) throw error;
       return data || [];
     }catch(e){
@@ -490,17 +489,17 @@
       renderAll();
       contentEl.classList.add("show");
       document.getElementById("updatedNote").textContent =
-        "آخر تحديث: " + new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+        "Last updated: " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     }catch(err){
       console.error(err);
       errorEl.innerHTML = `
-        <div style="font-weight:700;">تعذّر تحميل البيانات من Supabase</div>
+        <div style="font-weight:700;">Couldn't load data from Supabase</div>
         <div style="font-size:12px; max-width:520px;">
           ${err.message || err}<br><br>
-          الأسباب الشائعة: أسماء الجداول/الأعمدة في SCHEMA لا تطابق قاعدة البيانات فعليًا،
-          أو أن Row Level Security مفعّل على الجداول بدون سياسة SELECT تسمح لدور anon بالقراءة —
-          هذا هو السبب الأكثر شيوعًا لظهور 0 في كل مكان رغم وجود بيانات في Table Editor
-          (لأن Table Editor يستخدم صلاحيات أعلى من مفتاح anon).
+          Common causes: the table/column names in SCHEMA don't match your database,
+          or Row Level Security is enabled on these tables without a SELECT policy for the anon role —
+          this is the most common reason for everything showing 0 despite data being visible in Table Editor
+          (Table Editor uses elevated privileges, not the anon key).
         </div>`;
       errorEl.classList.add("show");
     }finally{
@@ -512,7 +511,6 @@
   /* ---------- Render everything ---------- */
   function renderAll(){
     const students = combined.students;
-    const col = SCHEMA.col;
 
     // ---- KPIs ----
     const studentsCount = students.length;
@@ -527,21 +525,20 @@
 
     document.getElementById("kpiStudents").textContent = studentsCount;
     document.getElementById("kpiStudentsSub").textContent =
-      currentGrade === "all" ? "في كل الصفوف" : GRADE_LABELS[currentGrade];
+      currentGrade === "all" ? "across all grades" : GRADE_LABELS[currentGrade];
 
     document.getElementById("kpiAttendance").textContent = attendanceRate != null ? `${attendanceRate}%` : "–";
-    document.getElementById("kpiAttendanceSub").textContent = pcts.length ? `متوسط ${pcts.length} طالب` : "لا بيانات حضور";
+    document.getElementById("kpiAttendanceSub").textContent = pcts.length ? `avg of ${pcts.length} students` : "no attendance data";
 
     document.getElementById("kpiRevenue").textContent = fmtEGP(totalRevenue);
     document.getElementById("kpiRevenueSub").textContent =
       (totalRevenue === 0 && paidStudents.length > 0)
-        ? "⚠️ عدد المسددين > 0 لكن amount_paid = 0 — تحقّق من ورك فلو الدفع"
-        : `${paidStudents.length} طالب مسدد`;
+        ? "⚠️ paid students exist but amount_paid = 0 — check payment workflow"
+        : `${paidStudents.length} students paid`;
 
     document.getElementById("kpiUnpaid").textContent = unpaidStudents.length;
-    document.getElementById("kpiUnpaidSub").textContent = withPaymentRecord.length ? `من أصل ${withPaymentRecord.length}` : "لا سجلات دفع";
+    document.getElementById("kpiUnpaidSub").textContent = withPaymentRecord.length ? `out of ${withPaymentRecord.length}` : "no payment records";
 
-    document.getElementById("kpiCollectionSub").textContent = "من إجمالي المطلوب دفعه";
     const ringEl = document.getElementById("collectionRing");
     const circumference = 150.8;
     if(collectionRate != null){
@@ -570,7 +567,7 @@
     const canvas = document.getElementById("attendanceByGradeChart");
     const emptyEl = document.getElementById("attChartEmpty");
     destroyChart("att");
-    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
 
     const gradesShown = currentGrade === "all" ? GRADES : [currentGrade];
     const rows = gradesShown.map(g => {
@@ -597,7 +594,7 @@
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.raw}%` } } },
         scales: {
           y: { beginAtZero: true, max: 100, ticks: { callback: v => v + "%", font: { size: 10 } }, grid: { color: "rgba(21,42,69,0.06)" } },
-          x: { ticks: { font: { size: 11, family: "Tajawal" } }, grid: { display: false } }
+          x: { ticks: { font: { size: 11, family: "Inter" } }, grid: { display: false } }
         }
       }
     });
@@ -607,7 +604,7 @@
     const canvas = document.getElementById("paymentStatusChart");
     const emptyEl = document.getElementById("payChartEmpty");
     destroyChart("pay");
-    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
 
     if(paidCount + unpaidCount === 0){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
     canvas.style.display = "block"; emptyEl.classList.remove("show");
@@ -615,7 +612,7 @@
     charts.pay = new Chart(canvas, {
       type: "doughnut",
       data: {
-        labels: ["مسدد", "غير مسدد"],
+        labels: ["Paid", "Unpaid"],
         datasets: [{
           data: [paidCount, unpaidCount],
           backgroundColor: ["rgba(46,125,82,0.75)", "rgba(163,52,42,0.7)"],
@@ -624,7 +621,7 @@
       },
       options: {
         maintainAspectRatio: false, cutout: "68%",
-        plugins: { legend: { position: "bottom", labels: { font: { family: "Tajawal", size: 12 }, padding: 14 } } }
+        plugins: { legend: { position: "bottom", labels: { font: { family: "Inter", size: 12 }, padding: 14 } } }
       }
     });
   }
@@ -633,7 +630,7 @@
     const canvas = document.getElementById("revenueChart");
     const emptyEl = document.getElementById("revChartEmpty");
     destroyChart("rev");
-    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="مكتبة الرسم لم تُحمَّل — حدّث الصفحة"; emptyEl.classList.add("show"); return; }
+    if(!chartLibReady()){ canvas.style.display="none"; emptyEl.textContent="Chart library failed to load — try refreshing"; emptyEl.classList.add("show"); return; }
     const col = SCHEMA.col;
 
     let rows = combined.statsRows || [];
@@ -680,7 +677,7 @@
       .filter(s => s.p != null)
       .sort((a,b) => b.p - a.p || b.attendanceCount - a.attendanceCount)
       .slice(0, 6);
-    if(!top.length){ el.innerHTML = `<div class="empty-note">لا توجد بيانات بعد</div>`; return; }
+    if(!top.length){ el.innerHTML = `<div class="empty-note">No data yet</div>`; return; }
     el.innerHTML = top.map((s,i) => `
       <div class="list-row">
         <div class="list-name">
@@ -695,7 +692,7 @@
 
   function renderUnpaidList(unpaidStudents){
     const el = document.getElementById("unpaidList");
-    if(!unpaidStudents.length){ el.innerHTML = `<div class="empty-note">🎉 الجميع سدّد الرسوم</div>`; return; }
+    if(!unpaidStudents.length){ el.innerHTML = `<div class="empty-note">🎉 Everyone has paid</div>`; return; }
     el.innerHTML = unpaidStudents.slice(0, 8).map(s => `
       <div class="list-row">
         <div class="list-name">
@@ -704,7 +701,7 @@
         </div>
         ${s.parentPhone ? `<a class="phone-link" href="tel:${s.parentPhone}">${s.parentPhone}</a>` : `<span class="empty-note" style="padding:0;">—</span>`}
       </div>
-    `).join("") + (unpaidStudents.length > 8 ? `<div class="empty-note">+${unpaidStudents.length - 8} طالب آخر — راجع الجدول أدناه</div>` : "");
+    `).join("") + (unpaidStudents.length > 8 ? `<div class="empty-note">+${unpaidStudents.length - 8} more — see the table below</div>` : "");
   }
 
   /* ---------- Roster table ---------- */
@@ -726,7 +723,7 @@
 
     const body = document.getElementById("rosterBody");
     if(!rows.length){
-      body.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:22px;">لا توجد نتائج مطابقة</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">No matching results</td></tr>`;
       return;
     }
 
@@ -744,7 +741,7 @@
             ${p != null ? `<span class="bar-track"><span class="bar-fill" style="width:${p}%;"></span></span>${p}%` : "—"}
           </td>
           <td>${s.parentPhone ? `<a class="phone-link" href="tel:${s.parentPhone}">${s.parentPhone}</a>` : "—"}</td>
-          <td>${hasPaymentRecord ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? 'مسدد' : 'غير مسدد'}</span>` : "—"}</td>
+          <td>${hasPaymentRecord ? `<span class="chip ${paid ? 'paid' : 'unpaid'}">${paid ? 'Paid' : 'Unpaid'}</span>` : "—"}</td>
           <td>${s.lastAttendance || "—"}</td>
         </tr>`;
     }).join("");

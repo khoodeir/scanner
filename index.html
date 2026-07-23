@@ -739,15 +739,7 @@
       </div>
 
       <div class="dash-section">
-        <div class="dash-section-title">📈 Attendance Last 7 Days</div>
-        <div class="dash-chart-wrap">
-          <canvas id="attendanceChart"></canvas>
-          <div class="dash-chart-empty" id="attendanceChartEmpty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title">💰 Revenue Last 30 Days</div>
+        <div class="dash-section-title">💰 Monthly Revenue</div>
         <div class="dash-chart-wrap">
           <canvas id="revenueChart"></canvas>
           <div class="dash-chart-empty" id="revenueChartEmpty">No data yet</div>
@@ -800,23 +792,25 @@
 
   // If your table/column names are different, change ONLY the values on
   // the right-hand side here — nothing else in the file needs to change.
+  // Your setup uses one attendance table and one payments table PER GRADE
+  // (e.g. attendance_first_secondary, payments_first_secondary), plus a
+  // shared monthly_statistics table for revenue history.
   const SCHEMA = {
-    students: "students",
-    attendance: "attendance",
-    payments: "payments",
+    attendanceTable: (grade) => `attendance_${grade}_secondary`,
+    paymentsTable: (grade) => `payments_${grade}_secondary`,
+    monthlyStatsTable: "monthly_statistics",
     col: {
-      studentId: "id",
-      studentName: "name",
-      studentGrade: "grade",
-      studentNumber: "student_number",
-      attStudentId: "student_id",
-      attGrade: "grade",
-      attDate: "attended_at",
-      payStudentId: "student_id",
-      payGrade: "grade",
-      payAmount: "amount",
-      payDate: "paid_at",
-      payMonth: "month"
+      fullName: "full_name",
+      qrCode: "qr_code",
+      attendanceCount: "attendance_count",
+      absenceCount: "absence_count",
+      lastAttendance: "last_attendance",
+      paymentStatus: "payment_status",
+      amountPaid: "amount_paid",
+      statsGrade: "grade",
+      statsMonth: "month",
+      statsYear: "year",
+      statsRevenue: "revenue"
     }
   };
 
@@ -1502,7 +1496,6 @@
   }
 
   /* ---------- Analytics Dashboard ---------- */
-  let attendanceChartInstance = null;
   let revenueChartInstance = null;
   let dashboardGrade = "first";
 
@@ -1533,98 +1526,81 @@
     document.getElementById('dashContent').classList.remove('show');
 
     try{
-      const grade = dashboardGrade;
+      const grade = dashboardGrade; // "first" | "second" | "third"
       const col = SCHEMA.col;
+      const attTable = SCHEMA.attendanceTable(grade);
+      const payTable = SCHEMA.paymentsTable(grade);
 
-      // Students in this grade
-      const { data: students, error: studentsErr } = await supabaseClient
-        .from(SCHEMA.students)
+      // One row per student in this grade, with attendance_count / absence_count
+      // / last_attendance already aggregated on the row.
+      const { data: students, error: attErr } = await supabaseClient
+        .from(attTable)
+        .select('*');
+      if(attErr) throw attErr;
+
+      // One row per student in this grade, with the current payment_status.
+      const { data: payments, error: payErr } = await supabaseClient
+        .from(payTable)
+        .select('*');
+      if(payErr) throw payErr;
+
+      // Monthly revenue history for this grade.
+      const { data: statsRows, error: statsErr } = await supabaseClient
+        .from(SCHEMA.monthlyStatsTable)
         .select('*')
-        .eq(col.studentGrade, grade);
-      if(studentsErr) throw studentsErr;
+        .eq(col.statsGrade, grade);
+      if(statsErr) throw statsErr;
 
       const studentsCount = students.length;
 
-      // Every attendance record for this grade (used for the 7-day chart,
-      // the top-students list, and the overall attendance rate)
-      const { data: allAttendance, error: attErr } = await supabaseClient
-        .from(SCHEMA.attendance)
-        .select(`${col.attStudentId}, ${col.attDate}`)
-        .eq(col.attGrade, grade);
-      if(attErr) throw attErr;
+      // ---- Overall attendance rate: average of each student's own % ----
+      const perStudentPct = students
+        .map(s => {
+          const att = Number(s[col.attendanceCount] || 0);
+          const abs = Number(s[col.absenceCount] || 0);
+          const total = att + abs;
+          return total > 0 ? (att / total) * 100 : null;
+        })
+        .filter(v => v != null);
+      const attendanceRate = perStudentPct.length
+        ? Math.round(perStudentPct.reduce((a, b) => a + b, 0) / perStudentPct.length)
+        : 0;
 
-      // Every payment record for this grade (used for the 30-day chart,
-      // this month's revenue, and who hasn't paid yet)
-      const { data: allPayments, error: payErr } = await supabaseClient
-        .from(SCHEMA.payments)
-        .select(`${col.payStudentId}, ${col.payAmount}, ${col.payDate}, ${col.payMonth}`)
-        .eq(col.payGrade, grade);
-      if(payErr) throw payErr;
-
-      // ---- Attendance, last 7 days ----
-      const days7 = [];
-      for(let i = 6; i >= 0; i--){
-        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
-        days7.push(d);
-      }
-      const attendanceSeries = days7.map(d => {
-        const next = new Date(d); next.setDate(next.getDate() + 1);
-        const count = allAttendance.filter(a => {
-          const t = new Date(a[col.attDate]);
-          return t >= d && t < next;
-        }).length;
-        return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: count };
-      });
-
-      // ---- Revenue, last 30 days ----
-      const days30 = [];
-      for(let i = 29; i >= 0; i--){
-        const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
-        days30.push(d);
-      }
-      const revenueSeries = days30.map(d => {
-        const next = new Date(d); next.setDate(next.getDate() + 1);
-        const sum = allPayments.filter(p => {
-          const t = new Date(p[col.payDate]);
-          return t >= d && t < next;
-        }).reduce((acc, p) => acc + Number(p[col.payAmount] || 0), 0);
-        return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: sum };
-      });
-
-      // ---- Top students by total attendance count ----
-      const attCountByStudent = {};
-      allAttendance.forEach(a => {
-        const id = a[col.attStudentId];
-        attCountByStudent[id] = (attCountByStudent[id] || 0) + 1;
-      });
-      const maxAttendance = Math.max(1, ...Object.values(attCountByStudent), 0);
-      const topStudents = students
-        .map(s => ({ name: s[col.studentName], count: attCountByStudent[s[col.studentId]] || 0 }))
-        .sort((a, b) => b.count - a.count)
+      // ---- Top students by total attendance_count ----
+      const topStudents = [...students]
+        .sort((a, b) => Number(b[col.attendanceCount] || 0) - Number(a[col.attendanceCount] || 0))
         .slice(0, 5)
-        .map(s => ({ name: s.name, percentage: Math.round((s.count / maxAttendance) * 100) }));
+        .map(s => {
+          const att = Number(s[col.attendanceCount] || 0);
+          const abs = Number(s[col.absenceCount] || 0);
+          const total = att + abs;
+          return { name: s[col.fullName], percentage: total > 0 ? Math.round((att / total) * 100) : null };
+        });
 
-      // ---- Overall attendance rate: records / (students × distinct session days) ----
-      const sessionDays = new Set(allAttendance.map(a => new Date(a[col.attDate]).toDateString())).size || 1;
-      const attendanceRate = studentsCount > 0
-        ? Math.round((allAttendance.length / (studentsCount * sessionDays)) * 100)
-        : 0;
+      // ---- Payments: collection rate + unpaid list (current status, not history) ----
+      const isPaid = p => String(p[col.paymentStatus] || "").trim().toLowerCase() === "paid";
+      const paidCount = payments.filter(isPaid).length;
+      const collectionRate = payments.length ? Math.round((paidCount / payments.length) * 100) : 0;
+      const unpaidStudents = payments.filter(p => !isPaid(p)).map(p => p[col.fullName]);
 
-      // ---- This month: who paid, who didn't, and total revenue ----
+      // ---- Monthly revenue (from monthly_statistics), last 6 months available ----
+      const monthRows = [...statsRows]
+        .sort((a, b) => {
+          const ay = Number(a[col.statsYear]), am = Number(a[col.statsMonth]);
+          const by = Number(b[col.statsYear]), bm = Number(b[col.statsMonth]);
+          return ay !== by ? ay - by : am - bm;
+        })
+        .slice(-6);
+      const revenueSeries = monthRows.map(r => ({
+        label: `${String(r[col.statsMonth]).padStart(2, '0')}/${r[col.statsYear]}`,
+        value: Number(r[col.statsRevenue]) || 0
+      }));
+
+      // ---- This month's revenue ----
       const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      const paidIdsThisMonth = new Set(
-        allPayments.filter(p => p[col.payMonth] === currentMonth).map(p => p[col.payStudentId])
-      );
-      const unpaidStudents = students
-        .filter(s => !paidIdsThisMonth.has(s[col.studentId]))
-        .map(s => s[col.studentName]);
-      const collectionRate = studentsCount > 0
-        ? Math.round((paidIdsThisMonth.size / studentsCount) * 100)
-        : 0;
-      const revenue = allPayments
-        .filter(p => p[col.payMonth] === currentMonth)
-        .reduce((acc, p) => acc + Number(p[col.payAmount] || 0), 0);
+      const curMonth = now.getMonth() + 1, curYear = now.getFullYear();
+      const curStatsRow = statsRows.find(r => Number(r[col.statsMonth]) === curMonth && Number(r[col.statsYear]) === curYear);
+      const revenue = curStatsRow ? (Number(curStatsRow[col.statsRevenue]) || 0) : 0;
 
       document.getElementById('dashLoading').style.display = 'none';
       renderDashboard({
@@ -1632,7 +1608,6 @@
         attendance_rate: attendanceRate,
         revenue: revenue,
         collection_rate: collectionRate,
-        attendance_last_7_days: attendanceSeries,
         revenue_last_30_days: revenueSeries,
         top_students: topStudents,
         unpaid_students: unpaidStudents
@@ -1685,10 +1660,8 @@
     document.getElementById('statCollection').textContent = collectionRate != null ? `${collectionRate}%` : "–";
     document.getElementById('statCollectionDelta').innerHTML = formatDelta(d.collection_delta);
 
-    // Charts (only rendered when historical series data is actually sent)
-    const attendanceSeries = d.attendance_last_7_days || [];
+    // Chart (only rendered when historical series data is actually sent)
     const revenueSeries = d.revenue_last_30_days || [];
-    renderAttendanceChart(attendanceSeries);
     renderRevenueChart(revenueSeries);
 
     // Top students
@@ -1715,45 +1688,6 @@
         </div>
       `).join("");
     }
-  }
-
-  function renderAttendanceChart(series){
-    const ctx = document.getElementById('attendanceChart');
-    const emptyEl = document.getElementById('attendanceChartEmpty');
-    if(attendanceChartInstance){ attendanceChartInstance.destroy(); attendanceChartInstance = null; }
-
-    if(!series.length){
-      ctx.style.display = 'none';
-      emptyEl.classList.add('show');
-      return;
-    }
-    ctx.style.display = 'block';
-    emptyEl.classList.remove('show');
-    if(typeof Chart === "undefined") return;
-
-    attendanceChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: series.map(p => p.label ?? p.date ?? ""),
-        datasets: [{
-          data: series.map(p => p.value ?? p.count ?? p.attendance ?? 0),
-          borderColor: '#1c3d5a',
-          backgroundColor: 'rgba(28,61,90,0.12)',
-          tension: 0.35,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: '#1c3d5a'
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(28,61,90,0.08)' } },
-          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
-        }
-      }
-    });
   }
 
   function renderRevenueChart(series){

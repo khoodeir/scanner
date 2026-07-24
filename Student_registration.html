@@ -269,24 +269,30 @@ form.addEventListener('submit', async (e) => {
 
   try{
     const res = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payload)
+});
 
-    if (res.ok){
-      form.style.display = 'none';
-      titleWrap.style.display = 'none';
-      subtitle.style.display = 'none';
-      successView.style.display = 'block';
-      return;
-    } else {
-      const message = await extractErrorMessage(res);
-      statusEl.textContent = message;
-      statusEl.classList.add('failure');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit';
-    }
+const data = await res.json();
+
+if (data.success === true) {
+
+  form.style.display = 'none';
+  titleWrap.style.display = 'none';
+  subtitle.style.display = 'none';
+  successView.style.display = 'block';
+
+} else {
+
+  statusEl.textContent = data.message || "Registration failed.";
+  statusEl.className = "status failure";
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Submit";
+}
   } catch(err){
     statusEl.textContent = 'Something went wrong while submitting. Please try again.';
     statusEl.classList.add('failure');

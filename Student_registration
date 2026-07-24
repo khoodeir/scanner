@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Registration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#eef1fb;
+    --bg-2:#e4e9fb;
+    --card:#ffffff;
+    --accent:#4b4fe8;
+    --accent-dark:#3a3ec7;
+    --accent-light:#eceeff;
+    --text:#1b1f2b;
+    --muted:#6c7180;
+    --border:#e3e6ef;
+    --error:#e0405a;
+    --success:#1c8a4b;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 500px at 15% -10%, #eef0ff 0%, rgba(238,240,255,0) 60%),
+      radial-gradient(900px 500px at 110% 10%, #e7ecff 0%, rgba(231,236,255,0) 55%),
+      var(--bg-1);
+    font-family:'Inter', 'Segoe UI', Arial, sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px 16px;
+    color:var(--text);
+  }
+  .card{
+    width:100%;
+    max-width:540px;
+    background:var(--card);
+    border-radius:20px;
+    padding:44px 40px 40px;
+    box-shadow:0 20px 50px rgba(35,45,110,0.10), 0 2px 8px rgba(35,45,110,0.05);
+    border:1px solid rgba(255,255,255,0.6);
+    animation:cardIn .5s ease both;
+  }
+  @keyframes cardIn{
+    from{ opacity:0; transform:translateY(14px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .card{ animation:none; }
+  }
+  .title-wrap{
+    text-align:center;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Poppins', 'Inter', sans-serif;
+    display:inline-block;
+    background:linear-gradient(135deg, var(--accent) 0%, #5f63f0 100%);
+    color:#fff;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:0.2px;
+    padding:10px 26px;
+    border-radius:8px;
+    margin:0 0 16px;
+    box-shadow:0 8px 20px rgba(75,79,232,0.25);
+  }
+  .subtitle{
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.65;
+    margin:0 0 32px;
+    padding:0 8px;
+  }
+  label{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:8px;
+    color:var(--text);
+  }
+  label .req{
+    color:var(--error);
+  }
+  .field{
+    margin-bottom:22px;
+  }
+  input[type="text"],
+  input[type="tel"],
+  select{
+    width:100%;
+    padding:13px 15px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-family:inherit;
+    font-size:15px;
+    color:var(--text);
+    background:#fbfbfd;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  input::placeholder{ color:#a7abba; }
+  select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'><path d='M1 1l6 6 6-6' stroke='%23555' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 16px center;
+    padding-right:40px;
+    cursor:pointer;
+  }
+  select:invalid{ color:#a7abba; }
+  select option{ color:var(--text); }
+  input:hover, select:hover{ border-color:#c7ccdd; }
+  input:focus,
+  select:focus{
+    border-color:var(--accent);
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(75,79,232,0.12);
+  }
+  input.invalid{
+    border-color:var(--error);
+  }
+  input.invalid:focus{
+    box-shadow:0 0 0 4px rgba(224,64,90,0.12);
+  }
+  .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:7px;
+  }
+  .error-msg{
+    font-size:12.5px;
+    color:var(--error);
+    margin-top:7px;
+    display:none;
+    font-weight:500;
+  }
+  .field.has-error .error-msg{ display:block; }
+  .field.has-error .hint{ display:none; }
+  button.submit{
+    width:100%;
+    padding:15px;
+    margin-top:14px;
+    background:linear-gradient(135deg, var(--accent) 0%, #5f63f0 100%);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    letter-spacing:0.2px;
+    box-shadow:0 10px 24px rgba(75,79,232,0.28);
+    transition:transform .12s ease, box-shadow .12s ease, background .15s ease;
+  }
+  button.submit:hover{
+    transform:translateY(-1px);
+    box-shadow:0 14px 28px rgba(75,79,232,0.34);
+  }
+  button.submit:active{ transform:translateY(0); }
+  button.submit:disabled{
+    opacity:0.6;
+    cursor:not-allowed;
+    transform:none;
+    box-shadow:none;
+  }
+  .status{
+    margin-top:18px;
+    text-align:center;
+    font-size:14px;
+    font-weight:500;
+    padding:12px 14px;
+    border-radius:10px;
+    display:none;
+  }
+  .status.success{
+    color:var(--success);
+    background:#ecf9f1;
+    border:1px solid #cdeed9;
+    display:block;
+  }
+  .status.failure{
+    color:var(--error);
+    background:#fdeced;
+    border:1px solid #f6cdd2;
+    display:block;
+  }
+  @media (max-width:480px){
+    .card{ padding:32px 22px 28px; }
+    h1{ font-size:19px; padding:9px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="title-wrap">
+    <h1>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px;margin-inline-end:6px;" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3L1 8l11 5 9-4.09V16h2V8L12 3z" fill="#fff"/>
+        <path d="M5 10.5V15c0 1.5 3 3.5 7 3.5s7-2 7-3.5v-4.5l-7 3.18-7-3.18z" fill="#fff" opacity="0.85"/>
+      </svg>Student Registration
+    </h1>
+  </div>
+  <p class="subtitle">Fill out the form to register. Your QR code will be sent to your WhatsApp after submission.</p>
+
+  <form id="regForm" novalidate>
+    <div class="field" id="fullNameField">
+      <label for="fullName">Full Name <span class="req">*</span></label>
+      <input type="text" id="fullName" name="fullName" placeholder="Enter student's full name" required>
+      <div class="hint">Letters only, no numbers or symbols</div>
+      <div class="error-msg">Full name must contain letters only</div>
+    </div>
+
+    <div class="field" id="studentPhoneField">
+      <label for="studentPhone">Student Phone <span class="req">*</span></label>
+      <input type="tel" id="studentPhone" name="studentPhone" inputmode="numeric" maxlength="11" placeholder="01xxxxxxxxx" required>
+      <div class="hint">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field" id="parentPhoneField">
+      <label for="parentPhone">Parent Phone <span class="req">*</span></label>
+      <input type="tel" id="parentPhone" name="parentPhone" inputmode="numeric" maxlength="11" placeholder="01xxxxxxxxx" required>
+      <div class="hint">11 digits, starting with 01 (e.g. 01012345678)</div>
+      <div class="error-msg">Enter a valid 11-digit number starting with 01</div>
+    </div>
+
+    <div class="field">
+      <label for="stage">Educational Stage <span class="req">*</span></label>
+      <select id="stage" name="stage" required>
+        <option value="" disabled selected>Select an option ...</option>
+        <option value="Secondary">Secondary</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="grade">Grade <span class="req">*</span></label>
+      <select id="grade" name="grade" required>
+        <option value="" disabled selected>Select an option ...</option>
+        <option value="First Grade">First Grade</option>
+        <option value="Second Grade">Second Grade</option>
+        <option value="Third Grade">Third Grade</option>
+      </select>
+    </div>
+
+    <button type="submit" class="submit" id="submitBtn">Submit</button>
+    <div class="status" id="status"></div>
+  </form>
+</div>
+
+<script>
+const WEBHOOK_URL = "https://helmet-handrail-skipper.ngrok-free.dev/webhook-test/Student_Registration";
+const phoneRegex = /^01[0-9]{9}$/; // 11 digits total, starts with 01
+
+const form = document.getElementById('regForm');
+const submitBtn = document.getElementById('submitBtn');
+const statusEl = document.getElementById('status');
+
+function setupPhoneField(inputId, fieldId){
+  const input = document.getElementById(inputId);
+  const field = document.getElementById(fieldId);
+
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+  });
+
+  function validate(){
+    const valid = phoneRegex.test(input.value);
+    field.classList.toggle('has-error', !valid);
+    input.classList.toggle('invalid', !valid);
+    return valid;
+  }
+
+  input.addEventListener('blur', validate);
+  return validate;
+}
+
+const validateStudentPhone = setupPhoneField('studentPhone', 'studentPhoneField');
+const validateParentPhone = setupPhoneField('parentPhone', 'parentPhoneField');
+
+const nameRegex = /^[A-Za-z\u0600-\u06FF\s]+$/; // English or Arabic letters and spaces only
+const nameInput = document.getElementById('fullName');
+const nameField = document.getElementById('fullNameField');
+
+nameInput.addEventListener('input', () => {
+  nameInput.value = nameInput.value.replace(/[^A-Za-z\u0600-\u06FF\s]/g, '');
+});
+
+function validateFullName(){
+  const valid = nameRegex.test(nameInput.value.trim()) && nameInput.value.trim().length > 0;
+  nameField.classList.toggle('has-error', !valid);
+  nameInput.classList.toggle('invalid', !valid);
+  return valid;
+}
+
+nameInput.addEventListener('blur', validateFullName);
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusEl.className = 'status';
+  statusEl.textContent = '';
+
+  const nameOk = validateFullName();
+  const studentOk = validateStudentPhone();
+  const parentOk = validateParentPhone();
+
+  if (!form.checkValidity() || !nameOk || !studentOk || !parentOk){
+    form.reportValidity();
+    return;
+  }
+
+  const payload = {
+    fullName: document.getElementById('fullName').value.trim(),
+    studentPhone: document.getElementById('studentPhone').value.trim(),
+    parentPhone: document.getElementById('parentPhone').value.trim(),
+    educationalStage: document.getElementById('stage').value,
+    grade: document.getElementById('grade').value
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try{
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok){
+      statusEl.textContent = 'Registration submitted! Your QR code will be sent to your WhatsApp shortly.';
+      statusEl.classList.add('success');
+      form.reset();
+    } else {
+      throw new Error('Request failed with status ' + res.status);
+    }
+  } catch(err){
+    statusEl.textContent = 'Something went wrong while submitting. Please try again.';
+    statusEl.classList.add('failure');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit';
+  }
+});
+</script>
+
+</body>
+</html>

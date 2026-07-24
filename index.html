@@ -401,7 +401,7 @@
     background:none; border:none; color:#5c7185; font-size:20px; cursor:pointer; line-height:1;
   }
   .modal-close:hover{ color:var(--accent); }
-  .modal input[type="text"], .modal input[type="number"], .modal input[type="color"], .modal input[type="url"], .modal select{
+  .modal input[type="text"], .modal input[type="number"], .modal input[type="color"], .modal input[type="url"], .modal input[type="password"], .modal select{
     width:100%; padding:10px 12px; margin-bottom:12px;
     background:rgba(28,61,90,0.03); border:1px solid var(--glass-border);
     border-radius:10px; color:#1c2733; font-family:'Inter',sans-serif; font-size:14px; outline:none;
@@ -422,6 +422,15 @@
     background:var(--accent); color:#ffffff;
   }
   .modal-btn:hover{ background:var(--accent-2); }
+  .modal-error{
+    font-size:12px; color:var(--error); text-align:center; margin-top:-4px; margin-bottom:10px; min-height:14px;
+  }
+  .link-btn{
+    width:100%; background:none; border:none; cursor:pointer;
+    color:var(--accent-2); font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600;
+    text-align:center; padding:10px 0 2px; text-decoration:underline;
+  }
+  .link-btn:hover{ color:var(--accent); }
   .report-list{ display:flex; flex-direction:column; gap:8px; }
   .report-item{
     display:flex; align-items:center; justify-content:space-between;
@@ -435,84 +444,6 @@
     border:1px solid var(--glass-border); font-size:13px; line-height:1.7; display:none;
   }
   .report-result.show{ display:block; }
-
-  /* Analytics Dashboard */
-  .dashboard-modal{ max-width:480px; }
-  .dash-grade-toggle{
-    display:flex; gap:6px; margin-bottom:16px;
-    background:rgba(28,61,90,0.04); border:1px solid var(--glass-border);
-    border-radius:12px; padding:4px;
-  }
-  .dash-grade-btn{
-    flex:1; border:none; cursor:pointer;
-    padding:9px 6px; border-radius:9px;
-    font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600;
-    background:transparent; color:#5c7185;
-    transition:all 0.2s ease;
-  }
-  .dash-grade-btn.active{ background:var(--accent); color:#ffffff; }
-  .dash-grade-btn:not(.active):hover{ color:var(--accent); }
-  .dash-loading{
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:36px 0; color:#5c7185; font-size:13px;
-  }
-  .dash-error{
-    display:none; color:var(--error); font-size:13px; text-align:center; padding:24px 4px;
-  }
-  .dash-error.show{ display:block; }
-  .dash-content{ display:none; }
-  .dash-content.show{ display:block; }
-
-  .stat-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px;
-  }
-  .stat-card{
-    background:rgba(28,61,90,0.04); border:1px solid var(--glass-border);
-    border-radius:14px; padding:14px 14px 12px;
-  }
-  .stat-label{
-    font-size:10.5px; text-transform:uppercase; letter-spacing:0.07em;
-    color:var(--accent-2); font-weight:700; margin-bottom:6px;
-  }
-  .stat-value{
-    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:21px; color:var(--accent);
-    line-height:1.1;
-  }
-  .stat-delta{ font-size:11.5px; font-weight:700; margin-top:5px; }
-  .stat-delta.up{ color:var(--success); }
-  .stat-delta.down{ color:var(--error); }
-
-  .dash-section{ margin-bottom:22px; }
-  .dash-section-title{
-    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13.5px;
-    color:var(--accent); margin-bottom:10px;
-  }
-  .dash-chart-wrap{
-    background:rgba(28,61,90,0.03); border:1px solid var(--glass-border);
-    border-radius:12px; padding:12px; height:170px; position:relative;
-  }
-  .dash-chart-empty{
-    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-    color:#8a97a5; font-size:12px;
-  }
-  .dash-chart-empty.show{ display:flex; }
-  .dash-list{ display:flex; flex-direction:column; gap:0; }
-  .dash-list-item{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:9px 2px; border-bottom:1px solid rgba(28,61,90,0.08); font-size:13px;
-  }
-  .dash-list-item:last-child{ border-bottom:none; }
-  .dash-list-rank{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:20px; height:20px; border-radius:6px; font-size:11px; font-weight:700;
-    background:rgba(184,137,43,0.15); color:var(--gold); margin-right:8px; flex-shrink:0;
-  }
-  .dash-list-name{ display:flex; align-items:center; color:#1c2733; }
-  .dash-list-value{ font-weight:700; color:var(--accent); }
-  .dash-list-empty{ color:#8a97a5; font-size:12px; text-align:center; padding:12px 0; }
-
-  .dash-export-row{ display:flex; gap:8px; margin-top:4px; }
-  .dash-export-btn{ margin-top:0; }
 
   /* Search-by selector */
   .search-type-toggle{
@@ -574,7 +505,7 @@
 
   <div class="toolbar">
     <button type="button" class="tool-btn" onclick="openModal('searchModal')">🔍 Search Student</button>
-    <button type="button" class="tool-btn" onclick="openDashboard()">📊 Analytics</button>
+    <button type="button" class="tool-btn" onclick="openDashboardGate()">📊 Dashboard</button>
   </div>
 
   <div class="mode-toggle">
@@ -694,77 +625,41 @@
   </div>
 </div>
 
-<!-- Analytics Dashboard modal -->
-<div class="modal-overlay" id="dashboardModal">
-  <div class="modal dashboard-modal">
+<!-- Dashboard password gate modal -->
+<div class="modal-overlay" id="dashboardGateModal">
+  <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">📊 Analytics Dashboard</div>
-      <button class="modal-close" onclick="closeModal('dashboardModal')">×</button>
+      <div class="modal-title" id="dashboardGateTitle">🔒 Dashboard Access</div>
+      <button class="modal-close" onclick="closeDashboardGate()">×</button>
     </div>
 
-    <div class="dash-grade-toggle" id="dashGradeToggle">
-      <button type="button" class="dash-grade-btn active" data-grade="first" onclick="setDashboardGrade('first')">First Secondary</button>
-      <button type="button" class="dash-grade-btn" data-grade="second" onclick="setDashboardGrade('second')">Second Secondary</button>
-      <button type="button" class="dash-grade-btn" data-grade="third" onclick="setDashboardGrade('third')">Third Secondary</button>
+    <div id="dashGateEnterSection">
+      <label for="dashboardPasswordInput">Password</label>
+      <input type="password" id="dashboardPasswordInput" placeholder="Enter password" autocomplete="off">
+      <div class="modal-error" id="dashboardGateError"></div>
+      <button class="modal-btn" onclick="checkDashboardPassword()">Open Dashboard</button>
+      <button type="button" class="link-btn" onclick="showChangePasswordForm()">Change Password</button>
     </div>
 
-    <div class="dash-loading" id="dashLoading">
-      <div class="spinner"></div><span>Loading dashboard…</span>
+    <div id="dashGateSetSection" style="display:none;">
+      <label for="dashboardNewPasswordInput">Create a Password</label>
+      <input type="password" id="dashboardNewPasswordInput" placeholder="New password" autocomplete="off">
+      <label for="dashboardNewPasswordConfirm">Confirm Password</label>
+      <input type="password" id="dashboardNewPasswordConfirm" placeholder="Confirm password" autocomplete="off">
+      <div class="modal-error" id="dashboardSetError"></div>
+      <button class="modal-btn" onclick="setDashboardPassword()">Save Password</button>
     </div>
 
-    <div class="dash-error" id="dashError"></div>
-
-    <div class="dash-content" id="dashContent">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">Students</div>
-          <div class="stat-value" id="statStudents">–</div>
-          <div class="stat-delta" id="statStudentsDelta"></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Attendance</div>
-          <div class="stat-value" id="statAttendance">–</div>
-          <div class="stat-delta" id="statAttendanceDelta"></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Revenue</div>
-          <div class="stat-value" id="statRevenue">–</div>
-          <div class="stat-delta" id="statRevenueDelta"></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Collection</div>
-          <div class="stat-value" id="statCollection">–</div>
-          <div class="stat-delta" id="statCollectionDelta"></div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title">💰 Monthly Revenue</div>
-        <div class="dash-chart-wrap">
-          <canvas id="revenueChart"></canvas>
-          <div class="dash-chart-empty" id="revenueChartEmpty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title">🏆 Top Students</div>
-        <div class="dash-list" id="topStudentsList">
-          <div class="dash-list-empty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-title">❌ Students Who Didn't Pay</div>
-        <div class="dash-list" id="unpaidStudentsList">
-          <div class="dash-list-empty">No data yet</div>
-        </div>
-      </div>
-
-      <div class="dash-export-row">
-        <button type="button" class="modal-btn dash-export-btn" onclick="runReport('export_pdf')">📄 Export PDF</button>
-        <button type="button" class="modal-btn dash-export-btn" onclick="runReport('export_excel')">📊 Export Excel</button>
-      </div>
-      <div class="report-result" id="reportResult"></div>
+    <div id="dashGateChangeSection" style="display:none;">
+      <label for="dashboardCurrentPasswordInput">Current Password</label>
+      <input type="password" id="dashboardCurrentPasswordInput" placeholder="Current password" autocomplete="off">
+      <label for="dashboardChangeNewInput">New Password</label>
+      <input type="password" id="dashboardChangeNewInput" placeholder="New password" autocomplete="off">
+      <label for="dashboardChangeConfirmInput">Confirm New Password</label>
+      <input type="password" id="dashboardChangeConfirmInput" placeholder="Confirm new password" autocomplete="off">
+      <div class="modal-error" id="dashboardChangeError"></div>
+      <button class="modal-btn" onclick="submitChangePassword()">Save New Password</button>
+      <button type="button" class="link-btn" onclick="cancelChangePassword()">Cancel</button>
     </div>
   </div>
 </div>
@@ -772,47 +667,169 @@
 <script>
   // Webhooks — one per workflow. Point these at your real n8n endpoints.
   // Expected JSON response shapes are documented next to each call below.
-  // NOTE: the Analytics dashboard no longer uses WEBHOOKS.report — it reads
-  // straight from Supabase (see the Supabase section below). The other
-  // actions (attendance, payment, search, exports) are unchanged.
   const WEBHOOKS = {
     attendance: "https://helmet-handrail-skipper.ngrok-free.dev/webhook/attendance&payment",
     payment:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook/attendance&payment",
-    search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook/attendance&payment",
-    report:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook/attendance&payment",
+    search:     "https://helmet-handrail-skipper.ngrok-free.dev/webhook/Search Management",
     session:    "https://helmet-handrail-skipper.ngrok-free.dev/webhook/Attendance Session Manager"
   };
 
   /* ============================================================
-     SUPABASE — Analytics Dashboard data source
-     ============================================================ */
-  const SUPABASE_URL = "https://evbjulsahncllewwvlxp.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2Ymp1bHNhaG5jbGxld3d2bHhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2NzE5MjUsImV4cCI6MjA5OTI0NzkyNX0.Xg9sU6ZenUU3kC2RNIbvZmK19KvE28MM2oyGcKNn8UA";
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+     DASHBOARD LINK — password-gated external link
+     ============================================================
+     The password is set by whoever uses this device the first time they
+     tap "Dashboard", then stored (as a simple hash, not plain text) in
+     this browser's localStorage. It can be changed any time from the
+     "Change Password" link on the gate screen.
+     NOTE: this is still a client-side, single-device gate — it's meant to
+     stop casual access on a shared tablet/phone, not a determined person
+     with access to the page source. For real security, protect the
+     dashboard page itself (e.g. a login on khoodeir.github.io).
+  */
+  const DASHBOARD_URL = "https://khoodeir.github.io/scanner/dashboard.html";
+  const DASH_PW_KEY = "scanner_dashboard_pw_hash";
 
-  // If your table/column names are different, change ONLY the values on
-  // the right-hand side here — nothing else in the file needs to change.
-  // Your setup uses one attendance table and one payments table PER GRADE
-  // (e.g. attendance_first_secondary, payments_first_secondary), plus a
-  // shared monthly_statistics table for revenue history.
-  const SCHEMA = {
-    attendanceTable: (grade) => `attendance_${grade}_secondary`,
-    paymentsTable: (grade) => `payments_${grade}_secondary`,
-    monthlyStatsTable: "monthly_statistics",
-    col: {
-      fullName: "full_name",
-      qrCode: "qr_code",
-      attendanceCount: "attendance_count",
-      absenceCount: "absence_count",
-      lastAttendance: "last_attendance",
-      paymentStatus: "payment_status",
-      amountPaid: "amount_paid",
-      statsGrade: "grade",
-      statsMonth: "month",
-      statsYear: "year",
-      statsRevenue: "revenue"
+  // Small non-cryptographic hash — just avoids storing the password in plain text.
+  function simpleHash(str){
+    let hash = 0;
+    for(let i = 0; i < str.length; i++){
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
     }
-  };
+    return String(hash);
+  }
+
+  function getStoredPasswordHash(){
+    try{ return localStorage.getItem(DASH_PW_KEY); }catch(e){ return null; }
+  }
+
+  function storePasswordHash(hash){
+    try{ localStorage.setItem(DASH_PW_KEY, hash); return true; }catch(e){ return false; }
+  }
+
+  function openDashboardGate(){
+    document.getElementById('dashboardGateError').textContent = "";
+    document.getElementById('dashboardSetError').textContent = "";
+    document.getElementById('dashboardPasswordInput').value = "";
+    document.getElementById('dashboardNewPasswordInput').value = "";
+    document.getElementById('dashboardNewPasswordConfirm').value = "";
+
+    if(getStoredPasswordHash()){
+      showEnterPasswordForm();
+    } else {
+      showSetPasswordForm();
+    }
+    openModal('dashboardGateModal');
+  }
+
+  function closeDashboardGate(){
+    closeModal('dashboardGateModal');
+  }
+
+  function showEnterPasswordForm(){
+    document.getElementById('dashboardGateTitle').textContent = "🔒 Dashboard Access";
+    document.getElementById('dashGateEnterSection').style.display = "";
+    document.getElementById('dashGateSetSection').style.display = "none";
+    document.getElementById('dashGateChangeSection').style.display = "none";
+    document.getElementById('dashboardGateError').textContent = "";
+    document.getElementById('dashboardPasswordInput').value = "";
+    setTimeout(()=> document.getElementById('dashboardPasswordInput').focus(), 50);
+  }
+
+  function showSetPasswordForm(){
+    document.getElementById('dashboardGateTitle').textContent = "🔒 Set a Dashboard Password";
+    document.getElementById('dashGateEnterSection').style.display = "none";
+    document.getElementById('dashGateSetSection').style.display = "";
+    document.getElementById('dashGateChangeSection').style.display = "none";
+    setTimeout(()=> document.getElementById('dashboardNewPasswordInput').focus(), 50);
+  }
+
+  function showChangePasswordForm(){
+    document.getElementById('dashboardGateTitle').textContent = "🔒 Change Password";
+    document.getElementById('dashGateEnterSection').style.display = "none";
+    document.getElementById('dashGateSetSection').style.display = "none";
+    document.getElementById('dashGateChangeSection').style.display = "";
+    document.getElementById('dashboardCurrentPasswordInput').value = "";
+    document.getElementById('dashboardChangeNewInput').value = "";
+    document.getElementById('dashboardChangeConfirmInput').value = "";
+    document.getElementById('dashboardChangeError').textContent = "";
+    setTimeout(()=> document.getElementById('dashboardCurrentPasswordInput').focus(), 50);
+  }
+
+  function cancelChangePassword(){
+    showEnterPasswordForm();
+  }
+
+  function setDashboardPassword(){
+    const pw = document.getElementById('dashboardNewPasswordInput').value;
+    const confirmPw = document.getElementById('dashboardNewPasswordConfirm').value;
+    const errEl = document.getElementById('dashboardSetError');
+    if(!pw){
+      errEl.textContent = "Please enter a password";
+      return;
+    }
+    if(pw !== confirmPw){
+      errEl.textContent = "Passwords don't match";
+      return;
+    }
+    if(!storePasswordHash(simpleHash(pw))){
+      errEl.textContent = "Couldn't save the password on this device";
+      return;
+    }
+    closeDashboardGate();
+    window.open(DASHBOARD_URL, "_blank");
+  }
+
+  function checkDashboardPassword(){
+    const entered = document.getElementById('dashboardPasswordInput').value;
+    const stored = getStoredPasswordHash();
+    if(stored && simpleHash(entered) === stored){
+      closeDashboardGate();
+      window.open(DASHBOARD_URL, "_blank");
+    } else {
+      document.getElementById('dashboardGateError').textContent = "Wrong password";
+    }
+  }
+
+  function submitChangePassword(){
+    const current = document.getElementById('dashboardCurrentPasswordInput').value;
+    const newPw = document.getElementById('dashboardChangeNewInput').value;
+    const confirmPw = document.getElementById('dashboardChangeConfirmInput').value;
+    const errEl = document.getElementById('dashboardChangeError');
+    const stored = getStoredPasswordHash();
+
+    if(!stored || simpleHash(current) !== stored){
+      errEl.textContent = "Current password is incorrect";
+      return;
+    }
+    if(!newPw){
+      errEl.textContent = "Please enter a new password";
+      return;
+    }
+    if(newPw !== confirmPw){
+      errEl.textContent = "New passwords don't match";
+      return;
+    }
+    storePasswordHash(simpleHash(newPw));
+    showToast("Password changed");
+    showEnterPasswordForm();
+  }
+
+  // Let Enter submit whichever section is currently visible
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const gateModal = document.getElementById('dashboardGateModal');
+    if(!gateModal) return;
+    gateModal.addEventListener('keydown', (e)=>{
+      if(e.key !== 'Enter') return;
+      if(document.getElementById('dashGateEnterSection').style.display !== 'none'){
+        checkDashboardPassword();
+      } else if(document.getElementById('dashGateSetSection').style.display !== 'none'){
+        setDashboardPassword();
+      } else if(document.getElementById('dashGateChangeSection').style.display !== 'none'){
+        submitChangePassword();
+      }
+    });
+  });
 
   // How long a result card stays on screen before auto-resuming the camera.
   const RESULT_DISPLAY_MS = 4000;
@@ -1451,278 +1468,6 @@
     })
     .catch(()=>{
       resultEl.innerHTML = "Can't connect to n8n.";
-    });
-  }
-
-  /* ---------- Reports ---------- */
-  function runReport(type){
-    const resultEl = document.getElementById("reportResult");
-    resultEl.classList.add("show");
-    resultEl.innerHTML = `<div class="spinner" style="display:inline-block;margin-right:8px;vertical-align:middle;"></div>Loading…`;
-
-    fetch(WEBHOOKS.report, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "report", report_type: type })
-    })
-    .then(async response => {
-      let data = {};
-      try{ data = await response.json(); }catch(e){}
-
-      if(!data.success){
-        resultEl.innerHTML = data.message || "Couldn't load this report.";
-        return;
-      }
-
-      if(type === "export_pdf" || type === "export_excel"){
-        if(data.url){
-          window.open(data.url, "_blank");
-          resultEl.innerHTML = "Export ready — opening in a new tab.";
-        } else {
-          resultEl.innerHTML = "Export URL missing from response.";
-        }
-        return;
-      }
-
-      // Generic key/value rendering for stat-style reports
-      const rows = Object.entries(data.data || {}).map(
-        ([k, v]) => `<div>${k.replace(/_/g," ")}: <b>${v}</b></div>`
-      ).join("");
-      resultEl.innerHTML = rows || "No data returned.";
-    })
-    .catch(()=>{
-      resultEl.innerHTML = "Can't connect to n8n.";
-    });
-  }
-
-  /* ---------- Analytics Dashboard ---------- */
-  let revenueChartInstance = null;
-  let dashboardGrade = "first";
-
-  function setDashboardGrade(grade){
-    dashboardGrade = grade;
-    document.querySelectorAll('#dashGradeToggle .dash-grade-btn').forEach(btn=>{
-      btn.classList.toggle('active', btn.dataset.grade === grade);
-    });
-    loadDashboard();
-  }
-
-  function openDashboard(){
-    openModal('dashboardModal');
-    loadDashboard();
-  }
-
-  function formatDelta(value){
-    if(value === null || value === undefined || value === "") return "";
-    const num = Number(value);
-    if(Number.isNaN(num)) return "";
-    const up = num >= 0;
-    return `<span class="stat-delta ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${up ? '+' : ''}${num}%</span>`;
-  }
-
-  async function loadDashboard(){
-    document.getElementById('dashLoading').style.display = 'flex';
-    document.getElementById('dashError').classList.remove('show');
-    document.getElementById('dashContent').classList.remove('show');
-
-    try{
-      const grade = dashboardGrade; // "first" | "second" | "third"
-      const col = SCHEMA.col;
-      const attTable = SCHEMA.attendanceTable(grade);
-      const payTable = SCHEMA.paymentsTable(grade);
-
-      // One row per student in this grade, with attendance_count / absence_count
-      // / last_attendance already aggregated on the row.
-      const { data: students, error: attErr } = await supabaseClient
-        .from(attTable)
-        .select('*');
-      if(attErr) throw attErr;
-
-      // One row per student in this grade, with the current payment_status.
-      const { data: payments, error: payErr } = await supabaseClient
-        .from(payTable)
-        .select('*');
-      if(payErr) throw payErr;
-
-      // Monthly revenue history for this grade.
-      const { data: statsRows, error: statsErr } = await supabaseClient
-        .from(SCHEMA.monthlyStatsTable)
-        .select('*')
-        .eq(col.statsGrade, grade);
-      if(statsErr) throw statsErr;
-
-      const studentsCount = students.length;
-
-      // ---- Overall attendance rate: average of each student's own % ----
-      const perStudentPct = students
-        .map(s => {
-          const att = Number(s[col.attendanceCount] || 0);
-          const abs = Number(s[col.absenceCount] || 0);
-          const total = att + abs;
-          return total > 0 ? (att / total) * 100 : null;
-        })
-        .filter(v => v != null);
-      const attendanceRate = perStudentPct.length
-        ? Math.round(perStudentPct.reduce((a, b) => a + b, 0) / perStudentPct.length)
-        : 0;
-
-      // ---- Top students by total attendance_count ----
-      const topStudents = [...students]
-        .sort((a, b) => Number(b[col.attendanceCount] || 0) - Number(a[col.attendanceCount] || 0))
-        .slice(0, 5)
-        .map(s => {
-          const att = Number(s[col.attendanceCount] || 0);
-          const abs = Number(s[col.absenceCount] || 0);
-          const total = att + abs;
-          return { name: s[col.fullName], percentage: total > 0 ? Math.round((att / total) * 100) : null };
-        });
-
-      // ---- Payments: collection rate + unpaid list (current status, not history) ----
-      const isPaid = p => String(p[col.paymentStatus] || "").trim().toLowerCase() === "paid";
-      const paidCount = payments.filter(isPaid).length;
-      const collectionRate = payments.length ? Math.round((paidCount / payments.length) * 100) : 0;
-      const unpaidStudents = payments.filter(p => !isPaid(p)).map(p => p[col.fullName]);
-
-      // ---- Monthly revenue (from monthly_statistics), last 6 months available ----
-      const monthRows = [...statsRows]
-        .sort((a, b) => {
-          const ay = Number(a[col.statsYear]), am = Number(a[col.statsMonth]);
-          const by = Number(b[col.statsYear]), bm = Number(b[col.statsMonth]);
-          return ay !== by ? ay - by : am - bm;
-        })
-        .slice(-6);
-      const revenueSeries = monthRows.map(r => ({
-        label: `${String(r[col.statsMonth]).padStart(2, '0')}/${r[col.statsYear]}`,
-        value: Number(r[col.statsRevenue]) || 0
-      }));
-
-      // ---- This month's revenue ----
-      const now = new Date();
-      const curMonth = now.getMonth() + 1, curYear = now.getFullYear();
-      const curStatsRow = statsRows.find(r => Number(r[col.statsMonth]) === curMonth && Number(r[col.statsYear]) === curYear);
-      const revenue = curStatsRow ? (Number(curStatsRow[col.statsRevenue]) || 0) : 0;
-
-      document.getElementById('dashLoading').style.display = 'none';
-      renderDashboard({
-        students_count: studentsCount,
-        attendance_rate: attendanceRate,
-        revenue: revenue,
-        collection_rate: collectionRate,
-        revenue_last_30_days: revenueSeries,
-        top_students: topStudents,
-        unpaid_students: unpaidStudents
-      });
-      document.getElementById('dashContent').classList.add('show');
-
-    }catch(err){
-      console.error(err);
-      document.getElementById('dashLoading').style.display = 'none';
-      const errEl = document.getElementById('dashError');
-      errEl.textContent = "Can't load the dashboard from Supabase. Check that the table/column names in SCHEMA match your database, and that Row Level Security allows anonymous SELECT on students, attendance and payments.";
-      errEl.classList.add('show');
-    }
-  }
-
-  function renderDashboard(d){
-    const topStudents = d.top_students ?? d.topStudents ?? [];
-    const unpaidStudents = d.unpaid_students ?? d.unpaid ?? [];
-
-    // Normalize each top student to a 0-100 attendance percentage, whichever
-    // field n8n happens to send (percentage, attendance_percentage, or raw
-    // attendance/absences counts).
-    const topStudentsNormalized = topStudents.map(s => {
-      let pct = s.percentage ?? s.attendance_percentage;
-      if(pct == null && s.attendance != null && s.absences != null){
-        const total = Number(s.attendance) + Number(s.absences);
-        if(total > 0) pct = Math.round((Number(s.attendance) / total) * 100);
-      }
-      return { name: s.name ?? "", percentage: pct };
-    });
-
-    // Stat cards
-    const studentsCount = d.students_count ?? d.students;
-    document.getElementById('statStudents').textContent = studentsCount ?? "–";
-    document.getElementById('statStudentsDelta').innerHTML = formatDelta(d.students_delta);
-
-    let attendanceRate = d.attendance_rate;
-    if(attendanceRate == null && topStudentsNormalized.length){
-      const values = topStudentsNormalized.map(s => s.percentage).filter(v => v != null);
-      if(values.length) attendanceRate = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-    }
-    document.getElementById('statAttendance').textContent = attendanceRate != null ? `${attendanceRate}%` : "–";
-    document.getElementById('statAttendanceDelta').innerHTML = formatDelta(d.attendance_delta);
-
-    const revenue = d.revenue;
-    document.getElementById('statRevenue').textContent = revenue != null ? `${Number(revenue).toLocaleString()} EGP` : "–";
-    document.getElementById('statRevenueDelta').innerHTML = formatDelta(d.revenue_delta);
-
-    const collectionRate = d.collection_rate ?? d.collection;
-    document.getElementById('statCollection').textContent = collectionRate != null ? `${collectionRate}%` : "–";
-    document.getElementById('statCollectionDelta').innerHTML = formatDelta(d.collection_delta);
-
-    // Chart (only rendered when historical series data is actually sent)
-    const revenueSeries = d.revenue_last_30_days || [];
-    renderRevenueChart(revenueSeries);
-
-    // Top students
-    const topList = document.getElementById('topStudentsList');
-    if(topStudentsNormalized.length === 0){
-      topList.innerHTML = `<div class="dash-list-empty">No data yet</div>`;
-    } else {
-      topList.innerHTML = topStudentsNormalized.map((s, i) => `
-        <div class="dash-list-item">
-          <div class="dash-list-name"><span class="dash-list-rank">${i + 1}</span>${s.name}</div>
-          <div class="dash-list-value">${s.percentage != null ? s.percentage + "%" : "–"}</div>
-        </div>
-      `).join("");
-    }
-
-    // Unpaid students
-    const unpaidList = document.getElementById('unpaidStudentsList');
-    if(unpaidStudents.length === 0){
-      unpaidList.innerHTML = `<div class="dash-list-empty">Everyone has paid 🎉</div>`;
-    } else {
-      unpaidList.innerHTML = unpaidStudents.map(s => `
-        <div class="dash-list-item">
-          <div class="dash-list-name">${typeof s === "string" ? s : (s.name ?? "")}</div>
-        </div>
-      `).join("");
-    }
-  }
-
-  function renderRevenueChart(series){
-    const ctx = document.getElementById('revenueChart');
-    const emptyEl = document.getElementById('revenueChartEmpty');
-    if(revenueChartInstance){ revenueChartInstance.destroy(); revenueChartInstance = null; }
-
-    if(!series.length){
-      ctx.style.display = 'none';
-      emptyEl.classList.add('show');
-      return;
-    }
-    ctx.style.display = 'block';
-    emptyEl.classList.remove('show');
-    if(typeof Chart === "undefined") return;
-
-    revenueChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: series.map(p => p.label ?? p.date ?? ""),
-        datasets: [{
-          data: series.map(p => p.value ?? p.amount ?? p.revenue ?? 0),
-          backgroundColor: 'rgba(184,137,43,0.55)',
-          borderRadius: 4,
-          maxBarThickness: 14
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(28,61,90,0.08)' } },
-          x: { ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true }, grid: { display: false } }
-        }
-      }
     });
   }
 

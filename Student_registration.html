@@ -199,6 +199,54 @@
     .card{ padding:32px 22px 28px; }
     h1{ font-size:19px; padding:9px 18px; }
   }
+
+  /* Success view */
+  #successView{
+    display:none;
+    text-align:center;
+  }
+  .icon-circle{
+    width:76px;
+    height:76px;
+    margin:4px auto 24px;
+    border-radius:50%;
+    background:linear-gradient(135deg, #22b06b 0%, #1c8a4b 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 10px 24px rgba(28,138,75,0.28);
+    animation:popIn .45s cubic-bezier(.34,1.56,.64,1) .1s both;
+  }
+  @keyframes popIn{
+    from{ opacity:0; transform:scale(0.6); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  #successView h2{
+    font-family:'Poppins', 'Inter', sans-serif;
+    font-size:21px;
+    font-weight:700;
+    margin:0 0 12px;
+    color:var(--text);
+  }
+  #successView p{
+    font-size:15px;
+    line-height:1.7;
+    color:var(--muted);
+    margin:0;
+  }
+  .whatsapp-note{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top:22px;
+    padding:10px 18px;
+    background:#ecf9f1;
+    border:1px solid #cdeed9;
+    border-radius:10px;
+    color:var(--success);
+    font-size:13.5px;
+    font-weight:500;
+  }
 </style>
 </head>
 <body>
@@ -257,6 +305,23 @@
     <button type="submit" class="submit" id="submitBtn">Submit</button>
     <div class="status" id="status"></div>
   </form>
+
+  <div id="successView">
+    <div class="icon-circle">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2>Registration Submitted!</h2>
+    <p>Thanks for registering. Your QR code will be sent to your WhatsApp shortly.</p>
+    <div class="whatsapp-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.5 14.4c-.3-.1-1.7-.8-2-1-.3-.1-.5-.1-.6.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.2-.4.1-.2 0-.4 0-.5-.1-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z" fill="#1c8a4b"/>
+        <path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z" stroke="#1c8a4b" stroke-width="1.4" fill="none"/>
+      </svg>
+      Sent to your WhatsApp
+    </div>
+  </div>
 </div>
 
 <script>
@@ -266,6 +331,9 @@ const phoneRegex = /^01[0-9]{9}$/; // 11 digits total, starts with 01
 const form = document.getElementById('regForm');
 const submitBtn = document.getElementById('submitBtn');
 const statusEl = document.getElementById('status');
+const successView = document.getElementById('successView');
+const titleWrap = document.querySelector('.title-wrap');
+const subtitle = document.querySelector('.subtitle');
 
 function setupPhoneField(inputId, fieldId){
   const input = document.getElementById(inputId);
@@ -339,16 +407,17 @@ form.addEventListener('submit', async (e) => {
     });
 
     if (res.ok){
-      statusEl.textContent = 'Registration submitted! Your QR code will be sent to your WhatsApp shortly.';
-      statusEl.classList.add('success');
-      form.reset();
+      form.style.display = 'none';
+      titleWrap.style.display = 'none';
+      subtitle.style.display = 'none';
+      successView.style.display = 'block';
+      return;
     } else {
       throw new Error('Request failed with status ' + res.status);
     }
   } catch(err){
     statusEl.textContent = 'Something went wrong while submitting. Please try again.';
     statusEl.classList.add('failure');
-  } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit';
   }

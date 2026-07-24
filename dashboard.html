@@ -384,6 +384,11 @@
 
   const GRADE_LABELS = { first: "First Secondary", second: "Second Secondary", third: "Third Secondary" };
   const GRADES = ["first", "second", "third"];
+  const GRADE_COLORS = {
+    first:  "rgba(184,137,43,0.75)",   // gold
+    second: "rgba(30,60,99,0.75)",     // ink-2
+    third:  "rgba(46,125,82,0.7)"      // success
+  };
 
   let currentGrade = "all";
   let payFilterState = "all";
@@ -631,35 +636,76 @@
     }
     if(!rows.length){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
 
-    // Aggregate by month/year (summing across grades when viewing "all")
-    const byKey = {};
-    rows.forEach(r => {
-      const key = `${r[col.statsYear]}-${String(r[col.statsMonth]).padStart(2,"0")}`;
-      byKey[key] = (byKey[key] || 0) + (Number(r[col.statsRevenue]) || 0);
-    });
-    const sortedKeys = Object.keys(byKey).sort().slice(-6);
-    if(!sortedKeys.length){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+    if(currentGrade === "all"){
+      // Grouped bars: one column per grade, side by side, for each month.
+      const byGradeMonth = {}; // { grade: { "YYYY-MM": revenue } }
+      const monthKeys = new Set();
+      rows.forEach(r => {
+        const g = r[col.statsGrade];
+        const key = `${r[col.statsYear]}-${String(r[col.statsMonth]).padStart(2,"0")}`;
+        monthKeys.add(key);
+        byGradeMonth[g] = byGradeMonth[g] || {};
+        byGradeMonth[g][key] = (byGradeMonth[g][key] || 0) + (Number(r[col.statsRevenue]) || 0);
+      });
+      const sortedMonths = Array.from(monthKeys).sort().slice(-6);
+      if(!sortedMonths.length){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
 
-    canvas.style.display = "block"; emptyEl.classList.remove("show");
-    charts.rev = new Chart(canvas, {
-      type: "bar",
-      data: {
-        labels: sortedKeys,
-        datasets: [{
-          data: sortedKeys.map(k => byKey[k]),
-          backgroundColor: "rgba(30,60,99,0.7)",
-          borderRadius: 5, maxBarThickness: 30
-        }]
-      },
-      options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEGP(c.raw) } } },
-        scales: {
-          y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(21,42,69,0.06)" } },
-          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      canvas.style.display = "block"; emptyEl.classList.remove("show");
+      charts.rev = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: sortedMonths,
+          datasets: GRADES.map(g => ({
+            label: GRADE_LABELS[g],
+            data: sortedMonths.map(k => (byGradeMonth[g] && byGradeMonth[g][k]) || 0),
+            backgroundColor: GRADE_COLORS[g],
+            borderRadius: 5, maxBarThickness: 22
+          }))
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: "bottom", labels: { font: { family: "Inter", size: 11 }, padding: 12 } },
+            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmtEGP(c.raw)}` } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(21,42,69,0.06)" } },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Single grade: one bar per month, as before.
+      const byKey = {};
+      rows.forEach(r => {
+        const key = `${r[col.statsYear]}-${String(r[col.statsMonth]).padStart(2,"0")}`;
+        byKey[key] = (byKey[key] || 0) + (Number(r[col.statsRevenue]) || 0);
+      });
+      const sortedKeys = Object.keys(byKey).sort().slice(-6);
+      if(!sortedKeys.length){ canvas.style.display = "none"; emptyEl.classList.add("show"); return; }
+
+      canvas.style.display = "block"; emptyEl.classList.remove("show");
+      charts.rev = new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: sortedKeys,
+          datasets: [{
+            label: GRADE_LABELS[currentGrade],
+            data: sortedKeys.map(k => byKey[k]),
+            backgroundColor: GRADE_COLORS[currentGrade],
+            borderRadius: 5, maxBarThickness: 30
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmtEGP(c.raw) } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: "rgba(21,42,69,0.06)" } },
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+    }
   }
 
   function renderTopAttenders(students){

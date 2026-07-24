@@ -397,30 +397,39 @@ form.addEventListener('submit', async (e) => {
   };
 
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting...';
+submitBtn.textContent = 'Submitting...';
 
-  try{
-    const res = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+try {
+  const res = await fetch(WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-    if (res.ok){
-      form.style.display = 'none';
-      titleWrap.style.display = 'none';
-      subtitle.style.display = 'none';
-      successView.style.display = 'block';
-      return;
-    } else {
-      throw new Error('Request failed with status ' + res.status);
-    }
-  } catch(err){
-    statusEl.textContent = 'Something went wrong while submitting. Please try again.';
-    statusEl.classList.add('failure');
+  if (!res.ok) {
+    throw new Error('Request failed with status ' + res.status);
+  }
+
+  const data = await res.json();
+
+  if (data.success) {
+    form.style.display = 'none';
+    titleWrap.style.display = 'none';
+    subtitle.style.display = 'none';
+    successView.style.display = 'block';
+  } else {
+    statusEl.textContent = data.message || 'Registration failed.';
+    statusEl.className = 'status failure';
     submitBtn.disabled = false;
     submitBtn.textContent = 'Submit';
   }
+
+} catch (err) {
+  statusEl.textContent = 'Something went wrong while submitting. Please try again.';
+  statusEl.className = 'status failure';
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Submit';
+}
 });
 </script>
 
